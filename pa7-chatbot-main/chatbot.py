@@ -110,21 +110,21 @@ class Chatbot:
         else:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
             titles=self.extract_titles(self.preprocess(line))
-            if len(titles):
+            if len(titles) == 0:
                 response="That isn't a movie title I'm familiar with. Can you please try putting it in quotes?"
             else:
                 for title in titles:
                     MoviePlaces=self.find_movies_by_title(title)
                     if len(MoviePlaces) == 1:
                         sentiment=self.extract_sentiment(self.preprocess(line))
-                        if(sentiment==1):
-                            response="Oh, I know and I see you enjoyed \"{title}\". What other movies have you watched?" 
-                        elif(sentiment==-1):
-                            response="Oh I know and I understand that you didn't like \"{title}\""
+                        if(sentiment == 1):
+                            response=f"Oh, I know and I see you enjoyed \"{title}\". What other movies have you watched?" 
+                        elif(sentiment == -1):
+                            response=f"Oh I know and I understand that you didn't like \"{title}\""
                         else:
-                            response="I'm not sure how you feel about \"{title}\""
+                            response=f"I'm not sure how you feel about \"{title}\""
                     elif len(MoviePlaces) == 0:
-                        response="Sorry I don't know \"{title}\". Can you try asking me about another? Or maybe you can check the spelling"
+                        response=f"Sorry I don't know \"{title}\". Can you try asking me about another? Or maybe you can check the spelling?"
                     else:
                         response="Can you be more specific...and check the name of the movie."   
 
