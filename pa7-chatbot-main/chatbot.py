@@ -548,11 +548,8 @@ class Chatbot:
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
         
-        # Convert input to lowercase for consistent matching
-        preprocessed_input = preprocessed_input.lower()
-
-        # Remove punctuation for better word matching
-        preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input)
+        # Remove punctuation and covert to lowercase for better word matching
+        preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input.lower())
 
         # Emotion keywords mapped to each emotion
         emotions = {
@@ -567,7 +564,6 @@ class Chatbot:
             "Surprise": ["shocked", "amazed", "astonished", "unexpected", "woah", "wow", "shockingly"]
         }
 
-        # Store detected emotions
         detected_emotions = set()
 
         # Iterate through emotions and use regex word boundaries for better matching
@@ -605,14 +601,19 @@ class Chatbot:
         chatbot can do and how the user can interact with it.
 
         NOTE: This string will not be shown to the LLM in llm mode, this is just for the user
-        """
-
-        return """
+        
         Your task is to implement the chatbot as detailed in the PA7
         instructions.
         Remember: in the GUS mode, movie names will come in quotation marks
         and expressions of sentiment will be simple!
         TODO: Write here the description for your own chatbot!
+        """
+
+        return """
+        Welcome to the MovieBot! I help you find great movies based on what you like.
+        Tell me about a movie you've watched by mentioning its title in quotation marks
+        (e.g., "Inception") and sharing your thoughts. I'll use that information to
+        recommend movies you might enjoy. Let's get started!
         """
 
 
