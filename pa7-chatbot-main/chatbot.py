@@ -115,7 +115,7 @@ class Chatbot:
             else:
                 for title in titles:
                     MoviePlaces=self.find_movies_by_title(title)
-                    if len(MoviePlaces==1):
+                    if len(MoviePlaces) == 1:
                         sentiment=self.extract_sentiment(self.preprocess(line))
                         if(sentiment==1):
                             response="Oh, I know and I see you enjoyed \"{title}\". What other movies have you watched?" 
@@ -123,7 +123,7 @@ class Chatbot:
                             response="Oh I know and I understand that you didn't like \"{title}\""
                         else:
                             response="I'm not sure how you feel about \"{title}\""
-                    elif len(MoviePlaces==0):
+                    elif len(MoviePlaces) == 0:
                         response="Sorry I don't know \"{title}\". Can you try asking me about another? Or maybe you can check the spelling"
                     else:
                         response="Can you be more specific...and check the name of the movie."   
@@ -548,22 +548,38 @@ class Chatbot:
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
         
+        # Convert input to lowercase for consistent matching
+        preprocessed_input = preprocessed_input.lower()
+
+        # Remove punctuation for better word matching
+        preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input)
+
+        # Emotion keywords mapped to each emotion
         emotions = {
-            "Anger": ["angry", "frustrated", "upset", "furious", "mad"],
-            "Disgust": ["gross", "disgusting", "nasty", "revolting"],
-            "Fear": ["afraid", "scared", "terrified", "anxious"],
-            "Happiness": ["happy", "joyful", "excited", "delighted"],
+            "Anger": [
+                "angry", "frustrated", "upset", "furious", "mad", "pissed", "rage", "awful", 
+                "hate", "pissing", "pissing off", "irritated", "annoyed", "infuriating"
+            ],
+            "Disgust": ["disgusting", "gross", "nasty", "revolting"],
+            "Fear": ["afraid", "scared", "terrified", "anxious", "frightened", "startled"],
+            "Happiness": ["happy", "joyful", "excited", "delighted", "great", "fantastic", "wonderful", "delightful"],
             "Sadness": ["sad", "heartbroken", "depressed", "miserable"],
-            "Surprise": ["shocked", "amazed", "astonished", "unexpected"]
+            "Surprise": ["shocked", "amazed", "astonished", "unexpected", "woah", "wow", "shockingly"]
         }
 
-        emotionsList=[]
-        for emotion, word in emotions.items:
-            for w in word:
-                if any(w in preprocessed_input):
-                    emotionsList.append(emotion)
+        # Store detected emotions
+        detected_emotions = set()
 
-        return emotionsList
+        # Iterate through emotions and use regex word boundaries for better matching
+        for emotion, keywords in emotions.items():
+            for word in keywords:
+                # Check if the word is found as a standalone word
+                if re.findall(rf'\b{word}\b', preprocessed_input):
+                    detected_emotions.add(emotion)
+                    break  # Avoid duplicate checks for the same emotion
+
+        return detected_emotions
+
 
     ############################################################################
     # 6. Debug info                                                            #
