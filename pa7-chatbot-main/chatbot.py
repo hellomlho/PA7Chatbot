@@ -548,11 +548,8 @@ class Chatbot:
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
         
-        # Convert input to lowercase for consistent matching
-        preprocessed_input = preprocessed_input.lower()
-
-        # Remove punctuation for better word matching
-        preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input)
+        # Remove punctuation and covert to lowercase for better word matching
+        preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input.lower())
 
         # Emotion keywords mapped to each emotion
         emotions = {
@@ -567,7 +564,6 @@ class Chatbot:
             "Surprise": ["shocked", "amazed", "astonished", "unexpected", "woah", "wow", "shockingly"]
         }
 
-        # Store detected emotions
         detected_emotions = set()
 
         # Iterate through emotions and use regex word boundaries for better matching
