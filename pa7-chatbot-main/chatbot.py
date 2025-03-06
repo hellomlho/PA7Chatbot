@@ -9,6 +9,7 @@ import util
 from pydantic import BaseModel, Field
 
 import numpy as np
+import re
 
 
 # noinspection PyMethodMayBeStatic
@@ -18,7 +19,7 @@ class Chatbot:
     def __init__(self, llm_enabled=False):
         # The chatbot's default name is `moviebot`.
         # TODO: Give your chatbot a new name.
-        self.name = 'moviebot'
+        self.name = 'Movie Superfan Bot'
 
         self.llm_enabled = llm_enabled
 
@@ -33,7 +34,7 @@ class Chatbot:
         ########################################################################
 
         # Binarize the movie ratings before storing the binarized matrix.
-        self.ratings = ratings
+        self.ratings = self.binarize(ratings)
         ########################################################################
         #                             END OF YOUR CODE                         #
         ########################################################################
@@ -48,7 +49,7 @@ class Chatbot:
         # TODO: Write a short greeting message                                 #
         ########################################################################
 
-        greeting_message = "How can I help you?"
+        greeting_message = "Hi! I'm a Movie Bot. How can I help you?"
 
         ########################################################################
         #                             END OF YOUR CODE                         #
@@ -63,7 +64,7 @@ class Chatbot:
         # TODO: Write a short farewell message                                 #
         ########################################################################
 
-        goodbye_message = "Have a nice day!"
+        goodbye_message = "Have a great day!"
 
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -101,10 +102,31 @@ class Chatbot:
         # directly based on how modular it is, we highly recommended writing   #
         # code in a modular fashion to make it easier to improve and debug.    #
         ########################################################################
+
         if self.llm_enabled:
             response = "I processed {} in LLM Programming mode!!".format(line)
+            self.extract_emotion(line)
+            #call API, access model
         else:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
+            titles=self.extract_titles(self.preprocess(line))
+            if len(titles):
+                response="That isn't a movie title I'm familiar with. Can you please try putting it in quotes?"
+            else:
+                for title in titles:
+                    MoviePlaces=self.find_movies_by_title(title)
+                    if len(MoviePlaces==1):
+                        sentiment=self.extract_sentiment(self.preprocess(line))
+                        if(sentiment==1):
+                            response="Oh, I know and I see you enjoyed \"{title}\". What other movies have you watched?" 
+                        elif(sentiment==-1):
+                            response="Oh I know and I understand that you didn't like \"{title}\""
+                        else:
+                            response="I'm not sure how you feel about \"{title}\""
+                    elif len(MoviePlaces==0):
+                        response="Sorry I don't know \"{title}\". Can you try asking me about another? Or maybe you can check the spelling"
+                    else:
+                        response="Can you be more specific...and check the name of the movie."   
 
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -135,6 +157,11 @@ class Chatbot:
         # leave this method unmodified.                                        #
         ########################################################################
 
+        #lowercase, no punctuation besides the movie in the quotations
+
+        text=text.strip()
+        return text
+
         ########################################################################
         #                             END OF YOUR CODE                         #
         ########################################################################
@@ -163,7 +190,12 @@ class Chatbot:
         pre-processed with preprocess()
         :returns: list of movie titles that are potentially in the text
         """
-        return []
+        within_quotes = r'"(.*?)"'
+
+        # Use regex to find movie in quotes
+        potential_titles = re.findall(within_quotes, preprocessed_input)  
+    
+        return potential_titles
 
     def find_movies_by_title(self, title):
         """ Given a movie title, return a list of indices of matching movies.
@@ -183,7 +215,56 @@ class Chatbot:
         :param title: a string containing a movie title
         :returns: a list of indices of matching movies
         """
-        return []
+
+        # Remove extra spaces and make lowercase for matching
+        title = title.strip().lower()
+
+        # Extract year if it exists in title and remove from title
+        year_match = re.search(r'\((\d{4})\)', title)
+        year = year_match.group(1) if year_match else None
+        title_clean = re.sub(r'\(\d{4}\)', '', title).strip()
+
+        # Handle cases where articles (A, An, The) are at the beginning
+        title_parts = title_clean.split()
+        english_articles = ['a', 'an', 'the']
+
+        # Two potential title variations
+        title_variations = [
+            title_clean,  # Original title
+        ]
+
+        # If starts with an article, create rearranged versions
+        if len(title_parts) > 1 and title_parts[0].lower() in english_articles:
+            # Rearranged titles with different possible formatting
+            rearranged_variations = [
+                f"{' '.join(title_parts[1:])}, {title_parts[0]}",
+                f"{' '.join(title_parts[1:])} {title_parts[0]}",
+            ]
+            title_variations.extend(variation.lower() for variation in rearranged_variations)
+
+        # Matching movie indices list
+        matches = []
+
+        # Iterate over movie database to find matches
+        for idx, movie_entry in enumerate(self.titles):
+            movie_title = movie_entry[0].lower()
+            
+            # Remove the year and strip
+            movie_title_no_year = re.sub(r'\(\d{4}\)', '', movie_title).strip()
+
+            # Check each title variation
+            for variation in title_variations:
+                if variation == movie_title_no_year:
+                    # If year is specified, ensure it matches
+                    if year:
+                        if f'({year})' in movie_title:
+                            matches.append(idx)
+                            break
+                    else:
+                        matches.append(idx)
+                        break
+
+        return matches
 
     def extract_sentiment(self, preprocessed_input):
         """Extract a sentiment rating from a line of pre-processed text.
@@ -201,8 +282,57 @@ class Chatbot:
         pre-processed with preprocess()
         :returns: a numerical value for the sentiment of the text
         """
-        return 0
+        sentiment_dict = {}
+    
+        with open('data/sentiment.txt', 'r') as file:
+            for line in file:
+                word, sentiment = line.strip().split(',')
+                sentiment_dict[word] = 1 if sentiment == 'pos' else -1
+        
+       # Remove words inside quotation marks (movie titles)
+        preprocessed_input = re.sub(r'"[^"]*"', '', preprocessed_input)
 
+        words = preprocessed_input.split()
+        
+        positive_count = 0
+        negative_count = 0
+        negation = False  # Track if negation is active
+
+        negation_words = {"not", "never", "no", "didn't", "doesn't", "wasn't", "couldn't", "isn't"}
+
+        for word in words:
+            if word in negation_words:
+                negation = True  # Activate negation for the next word(s)
+                continue
+
+            if word == "enjoyed":
+                word = "enjoy"  # Hardcoded exception
+            elif word.endswith("ed") and len(word) > 3:
+                word = word[:-2] + "e"
+
+            if word in sentiment_dict:
+                sentiment_value = sentiment_dict[word]
+
+                # Apply negation
+                if negation:
+                    sentiment_value *= -1  # Flip sentiment
+                    negation = False  # Reset negation after applying it
+
+                if sentiment_value > 0:
+                    positive_count += sentiment_value
+                else:
+                    negative_count += abs(sentiment_value)
+
+        # Determine overall sentiment
+        if positive_count == 0 and negative_count == 0:
+            return 0
+        elif positive_count > negative_count:
+            return 1
+        elif negative_count > positive_count:
+            return -1
+        else:
+            return 0
+        
     ############################################################################
     # 3. Movie Recommendation helper functions                                 #
     ############################################################################
@@ -225,7 +355,7 @@ class Chatbot:
         positive
 
         :returns: a binarized version of the movie-rating matrix
-        """
+        """ 
         ########################################################################
         # TODO: Binarize the supplied ratings matrix.                          #
         #                                                                      #
@@ -236,6 +366,18 @@ class Chatbot:
         # zeros.
         binarized_ratings = np.zeros_like(ratings)
 
+        rows = len(ratings)
+        cols = len(ratings[0])
+
+        for i in range(rows):
+            for j in range(cols):
+                element = ratings[i][j]
+                if element == 0:
+                    binarized_ratings[i][j] = 0
+                elif element > threshold:
+                    binarized_ratings[i][j] = 1
+                else:
+                    binarized_ratings[i][j] = -1
         ########################################################################
         #                        END OF YOUR CODE                              #
         ########################################################################
@@ -258,6 +400,16 @@ class Chatbot:
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
+        # Calculate the dot products and magnitudes of u and v
+        dot_product = np.dot(u, v)
+        norm_u = np.linalg.norm(u)
+        norm_v = np.linalg.norm(v)
+        
+        # Calculate the cosine similarity
+        if norm_u == 0 or norm_v == 0: 
+            return 0  
+        similarity = dot_product / (norm_u * norm_v)
+    
         return similarity
 
     def recommend(self, user_ratings, ratings_matrix, k=10, llm_enabled=False):
@@ -282,7 +434,6 @@ class Chatbot:
         :returns: a list of k movie indices corresponding to movies in
         ratings_matrix, in descending order of recommendation.
         """
-
         ########################################################################
         # TODO: Implement a recommendation function that takes a vector        #
         # user_ratings and matrix ratings_matrix and outputs a list of movies  #
@@ -296,9 +447,21 @@ class Chatbot:
         # scores.                                                              #
         ########################################################################
 
-        # Populate this list with k movie indices to recommend to the user.
-        recommendations = []
+        # Exclude movies the user has already rated
+        unrated_indices = [i for i, rating in enumerate(user_ratings) if rating == 0]
 
+        # Calculate similarity scores for each unrated movie
+        scores = np.zeros(len(unrated_indices))
+        for i, movie_index in enumerate(unrated_indices):
+            # Calculate similarity with all rated movies
+            for j, user_rating in enumerate(user_ratings):
+                if user_rating != 0:
+                    similarity = self.similarity(ratings_matrix[movie_index], ratings_matrix[j])
+                    scores[i] += similarity * user_rating
+
+        # Get top k recommendations
+        top_indices = np.argsort(scores)[-k:][::-1]
+        recommendations = [unrated_indices[i] for i in top_indices]
         ########################################################################
         #                        END OF YOUR CODE                              #
         ########################################################################
@@ -319,9 +482,28 @@ class Chatbot:
         # TODO: Write a system prompt message for the LLM chatbot              #
         ########################################################################
 
-        system_prompt = """Your name is moviebot. You are a movie recommender chatbot. """ +\
-        """You can help users find movies they like and provide information about movies."""
+        system_prompt = """Your name is MovieBot. You are a movie recommender chatbot. 
+        You ONLY discuss movies. If a user asks about something unrelated, politely 
+        redirect them back to discussing movies. 
 
+        When a user veers off topic, emphasize you role as a movie recommender. For example:
+        - User: Can we talk about cars instead?
+        - You: As a moviebot assistant my job is to help you with only your movie related needs!  
+        Anything film related that you'd like to discuss?
+        
+        Your main goal is to collect user preferences on movies and recommend films based on their preferences.
+
+        When the user mentions a movie, acknowledge their sentiment and the title. For example:
+        - User: I enjoyed "The Notebook".
+        - You: Ok, you liked "The Notebook"! Tell me what you thought of another movie.
+
+        Keep track of how many movies the user has mentioned. After they have discussed 5 movies, 
+        offer a recommendation automatically. Example:
+        - You: Now that you've shared your opinion on 5/5 films, would you like a recommendation?
+
+        Stay on topic, acknowledge user preferences, and make recommendations after 5 movies.
+        """ 
+        
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -365,7 +547,24 @@ class Chatbot:
         :returns: a list of emotions in the text or an empty list if no emotions found.
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
-        return []
+
+        
+        emotions = {
+            "Anger": ["angry", "frustrated", "upset", "furious", "mad"],
+            "Disgust": ["gross", "disgusting", "nasty", "revolting"],
+            "Fear": ["afraid", "scared", "terrified", "anxious"],
+            "Happiness": ["happy", "joyful", "excited", "delighted"],
+            "Sadness": ["sad", "heartbroken", "depressed", "miserable"],
+            "Surprise": ["shocked", "amazed", "astonished", "unexpected"]
+        }
+
+        detected_emotions = []
+
+        for emotion, words in emotions.items():
+            if any(w in preprocessed_input for w in words):
+                detected_emotions.append(emotion)
+
+        return detected_emotions
 
     ############################################################################
     # 6. Debug info                                                            #
