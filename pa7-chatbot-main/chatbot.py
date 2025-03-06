@@ -547,7 +547,6 @@ class Chatbot:
         :returns: a list of emotions in the text or an empty list if no emotions found.
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
-
         
         emotions = {
             "Anger": ["angry", "frustrated", "upset", "furious", "mad"],
@@ -558,13 +557,13 @@ class Chatbot:
             "Surprise": ["shocked", "amazed", "astonished", "unexpected"]
         }
 
-        detected_emotions = []
+        emotionsList=[]
+        for emotion, word in emotions.items:
+            for w in word:
+                if any(w in preprocessed_input):
+                    emotionsList.append(emotion)
 
-        for emotion, words in emotions.items():
-            if any(w in preprocessed_input for w in words):
-                detected_emotions.append(emotion)
-
-        return detected_emotions
+        return emotionsList
 
     ############################################################################
     # 6. Debug info                                                            #
