@@ -120,6 +120,7 @@ class Chatbot:
                     "I can't quite tell if that's a movie title. Try adding quotes around it!",
                     "Oops! I might not recognize that as a movie title. Quotes should help!"
                 ])
+
             else:
                 for title in titles:
                     MoviePlaces = self.find_movies_by_title(title)
