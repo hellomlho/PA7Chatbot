@@ -113,10 +113,7 @@ class Chatbot:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
             titles=self.extract_titles(self.preprocess(line))
 
-            userMovies = 0
-
             if len(titles) == 0:
-                movieCount = "You have currently suggested " + str(userMovies) + " movies."
                 response = random.choice([
                     "That doesn't seem like a movie title I know. Try putting it in quotes!",
                     "Hmm, I don’t recognize that. Could you wrap the movie title in quotes?",
@@ -130,10 +127,8 @@ class Chatbot:
                 
                     if len(MoviePlaces) == 1:
                         sentiment = self.extract_sentiment(self.preprocess(line))
-                        
-                        userMovies += 1
+
                         if sentiment == 1:
-                            movieCount = "You have currently suggested " + str(userMovies) + " movies."
                             response = random.choice([
                                 f"Oh, I know \"{title}\" and I see you enjoyed it! What other movies have you watched?",
                                 f"Nice! You liked \"{title}\"! Any other movies you'd recommend?",
@@ -143,7 +138,6 @@ class Chatbot:
                             ])
                         
                         elif sentiment == -1:
-                            movieCount = "You have currently suggested " + str(userMovies) + " movies."
                             response = random.choice([
                                 f"Oh, I see. You didn’t enjoy \"{title}\". What about other movies?",
                                 f"Got it! \"{title}\" wasn’t your cup of tea. Anything else you've watched?",
@@ -153,7 +147,6 @@ class Chatbot:
                             ])
                         
                         else:
-                            movieCount = "You have currently suggested " + str(userMovies) + " movies."
                             response = random.choice([
                                 f"I'm not sure how you feel about \"{title}\". Want to tell me more?",
                                 f"Mixed feelings about \"{title}\"? I'd love to hear more!",
@@ -535,6 +528,9 @@ class Chatbot:
         ########################################################################
 
         system_prompt = """Your name is Movie Superfan Bot. You are a movie recommender chatbot. 
+        You have a personality of a dog and at the beginning or end of each line, you will say a
+        dog noise like: woof, woof; ruff, ruff; arf, arf, yap, yap; yip, yip, etc. You will also
+        have the enthusiam of a golden retriever and will be very excited to talk about movies.
         You ONLY discuss movies. If a user asks about something unrelated, politely 
         redirect them back to discussing movies. 
 

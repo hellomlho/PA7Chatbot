@@ -24,31 +24,31 @@ Welcome to Stanford CS124's
 [96mMovie Superfan Bot> [0mHi! I'm a Movie Bot. How can I help you?
 > I liked "Titanic (1997)"
 
-[96mMovie Superfan Bot> [0mCool! "Titanic (1997)" was a hit for you. Tell me about another movie!
+[96mMovie Superfan Bot> [0mGlad to hear you liked "Titanic (1997)"! Any other favorites?
 > I liked "10 Things I Hate About You"
 
-[96mMovie Superfan Bot> [0mNice! You liked "10 Things I Hate About You"! Any other movies you'd recommend?
+[96mMovie Superfan Bot> [0mAh, "10 Things I Hate About You"! Sounds like it was a great watch. What else have you seen?
 > I liked "She's the Man"
 
-[96mMovie Superfan Bot> [0mNice! You liked "She's the Man"! Any other movies you'd recommend?
+[96mMovie Superfan Bot> [0mCool! "She's the Man" was a hit for you. Tell me about another movie!
 > I liked "Sydney White"
 
-[96mMovie Superfan Bot> [0mCool! "Sydney White" was a hit for you. Tell me about another movie!
+[96mMovie Superfan Bot> [0mGlad to hear you liked "Sydney White"! Any other favorites?
 > I liked "Easy A"
 
-[96mMovie Superfan Bot> [0mCool! "Easy A" was a hit for you. Tell me about another movie!
-> yes
-
-[96mMovie Superfan Bot> [0mI'm not sure about that one. If it's a movie, please use quotes!
-> yeah!
-
-[96mMovie Superfan Bot> [0mI'm not sure about that one. If it's a movie, please use quotes!
+[96mMovie Superfan Bot> [0mNice! You liked "Easy A"! Any other movies you'd recommend?
 > yes
 
 [96mMovie Superfan Bot> [0mOops! I might not recognize that as a movie title. Quotes should help!
+> yeah!
+
+[96mMovie Superfan Bot> [0mOops! I might not recognize that as a movie title. Quotes should help!
+> yes
+
+[96mMovie Superfan Bot> [0mI'm not sure about that one. If it's a movie, please use quotes!
 > no
 
-[96mMovie Superfan Bot> [0mI can't quite tell if that's a movie title. Try adding quotes around it!
+[96mMovie Superfan Bot> [0mI'm not sure about that one. If it's a movie, please use quotes!
 > :quit
 
 [96mMovie Superfan Bot> [0mHave a great day!
