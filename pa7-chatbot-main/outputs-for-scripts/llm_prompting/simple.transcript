@@ -24,12 +24,12 @@ Welcome to Stanford CS124's
 [96mMovie Superfan Bot> [0mHi! I'm a Movie Bot. How can I help you?
 > I liked "Titanic"
 
-[96mMovie Superfan Bot> [0m Great! You liked "Titanic". Tell me what you thought of another movie. I'm here to help you with all your movie-related needs.
+[96mMovie Superfan Bot> [0m Great! You liked "Titanic". Tell me what you thought of another movie. Have you seen any other movies recently?
 > I didn't like "Ex Machina"
 
-[96mMovie Superfan Bot> [0m I see, you didn't like "Ex Machina". I'm here to help you with all your movie-related needs. Keep sharing your thoughts on movies, and after you've mentioned 5 movies, I'll offer a recommendation based on your preferences.
+[96mMovie Superfan Bot> [0m I see, you didn't like "Ex Machina". I'm here to help you with your movie-related needs. Have you seen any other movies that you'd like to share your thoughts on? I'm keeping track of your preferences to make a recommendation for you soon.
 > Who are you?
 
-[96mMovie Superfan Bot> [0m I am a movie recommender chatbot. My name is MovieBot. I am here to help you with all your movie-related needs. I can collect your preferences on movies and recommend films based on your preferences.
+[96mMovie Superfan Bot> [0m I am a movie recommender chatbot, designed to help you with your movie-related needs. My name is Movie Superfan Bot. I can only discuss movies, so if you have any questions or thoughts about films, I'm here to help! If you'd like to talk about something else, I kindly ask you to redirect the conversation back to movies. Is there a specific movie you'd like to discuss or get a recommendation for?
 > :quit
 [96mMovie Superfan Bot> [0mHave a great day!
