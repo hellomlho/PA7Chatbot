@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 import numpy as np
 import re
+import random
 
 
 # noinspection PyMethodMayBeStatic
@@ -110,23 +111,73 @@ class Chatbot:
         else:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
             titles=self.extract_titles(self.preprocess(line))
+
+            userMovies = 0
+
             if len(titles) == 0:
-                response="That isn't a movie title I'm familiar with. Can you please try putting it in quotes?"
+                movieCount = "You have currently suggested " + str(userMovies) + " movies."
+                response = random.choice([
+                    "That doesn't seem like a movie title I know. Try putting it in quotes!",
+                    "Hmm, I don’t recognize that. Could you wrap the movie title in quotes?",
+                    "I'm not sure about that one. If it's a movie, please use quotes!",
+                    "I can't quite tell if that's a movie title. Try adding quotes around it!",
+                    "Oops! I might not recognize that as a movie title. Quotes should help!"
+                ])
             else:
                 for title in titles:
-                    MoviePlaces=self.find_movies_by_title(title)
+                    MoviePlaces = self.find_movies_by_title(title)
+                
                     if len(MoviePlaces) == 1:
-                        sentiment=self.extract_sentiment(self.preprocess(line))
-                        if(sentiment == 1):
-                            response=f"Oh, I know and I see you enjoyed \"{title}\". What other movies have you watched?" 
-                        elif(sentiment == -1):
-                            response=f"Oh I know and I understand that you didn't like \"{title}\""
+                        sentiment = self.extract_sentiment(self.preprocess(line))
+                        
+                        userMovies += 1
+                        if sentiment == 1:
+                            movieCount = "You have currently suggested " + str(userMovies) + " movies."
+                            response = random.choice([
+                                f"Oh, I know \"{title}\" and I see you enjoyed it! What other movies have you watched?",
+                                f"Nice! You liked \"{title}\"! Any other movies you'd recommend?",
+                                f"Cool! \"{title}\" was a hit for you. Tell me about another movie!",
+                                f"Ah, \"{title}\"! Sounds like it was a great watch. What else have you seen?",
+                                f"Glad to hear you liked \"{title}\"! Any other favorites?"
+                            ])
+                        
+                        elif sentiment == -1:
+                            movieCount = "You have currently suggested " + str(userMovies) + " movies."
+                            response = random.choice([
+                                f"Oh, I see. You didn’t enjoy \"{title}\". What about other movies?",
+                                f"Got it! \"{title}\" wasn’t your cup of tea. Anything else you've watched?",
+                                f"Understood! \"{title}\" wasn’t a favorite. Any better ones?",
+                                f"Noted! \"{title}\" didn’t work for you. Let’s talk about another movie!",
+                                f"Too bad \"{title}\" wasn’t enjoyable. Maybe another movie left a better impression?"
+                            ])
+                        
                         else:
-                            response=f"I'm not sure how you feel about \"{title}\""
+                            movieCount = "You have currently suggested " + str(userMovies) + " movies."
+                            response = random.choice([
+                                f"I'm not sure how you feel about \"{title}\". Want to tell me more?",
+                                f"Mixed feelings about \"{title}\"? I'd love to hear more!",
+                                f"Unclear on your thoughts about \"{title}\". Want to elaborate?",
+                                f"Hmm, you seem neutral on \"{title}\". What stood out to you?",
+                                f"Not sure about your opinion on \"{title}\". Care to share more details?"
+                            ])
+
                     elif len(MoviePlaces) == 0:
-                        response=f"Sorry I don't know \"{title}\". Can you try asking me about another? Or maybe you can check the spelling?"
+                        response = random.choice([
+                            f"Sorry, I don’t know \"{title}\". Can you try another one?",
+                            f"Hmm, \"{title}\" doesn’t ring a bell. Maybe a different movie?",
+                            f"I don’t recognize \"{title}\". Could you double-check the spelling?",
+                            f"\"{title}\" isn’t in my database. Want to try another movie?",
+                            f"I haven’t heard of \"{title}\". Let’s talk about a different movie!"
+                        ])
+                
                     else:
-                        response="Can you be more specific...and check the name of the movie."   
+                        response = random.choice([
+                            "Can you be more specific? There are multiple movies with that name!",
+                            "There seem to be several movies with that title. Can you clarify?",
+                            "I found multiple matches for that movie. Could you specify the year?",
+                            "There’s more than one movie by that name. Can you give me more details?",
+                            "Looks like there are multiple versions of that film! Any specifics?"
+                        ])
 
         ########################################################################
         #                          END OF YOUR CODE                            #
