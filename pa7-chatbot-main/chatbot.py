@@ -117,7 +117,6 @@ class Chatbot:
             user_ratings = np.zeros(len(self.titles))
 
             if len(titles) == 0:
-                
                 response = random.choice([
                     "Hmm, I don't recognize a movie title in what you just said. Would you please tell me about a movie you've seen recently?",
                     "I didn't catch a movie title there. Could you mention a film you've watched?",
@@ -187,9 +186,9 @@ class Chatbot:
                         ])
 
                 if self.movieCount==5:
-                    reccomendationIndex=self.recommend(self.user_ratings,self.ratings)[0]
+                    reccomendationIndex=self.recommend(user_ratings,self.ratings)[0]
                     reccomendedMovie=self.titles[reccomendationIndex][0]
-                    return response + "Now that you've shared 5 movies, I think you would like \"{reccomendedMovie}\". Would you like another recommendation?"
+                    return response + f" Now that you've shared 5 movies, I think you would like \"{reccomendedMovie}\". Would you like another recommendation?"
 
         ########################################################################
         #                          END OF YOUR CODE                            #
