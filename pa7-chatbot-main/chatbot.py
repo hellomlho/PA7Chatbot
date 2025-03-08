@@ -112,6 +112,7 @@ class Chatbot:
         else:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
             titles=self.extract_titles(self.preprocess(line))
+            userMovies=0
 
             if len(titles) == 0:
                 response = random.choice([
@@ -124,10 +125,17 @@ class Chatbot:
             else:
                 for title in titles:
                     MoviePlaces = self.find_movies_by_title(title)
-                
-                    if len(MoviePlaces) == 1:
+                    if len(MoviePlaces)==0:
+                        response=random.choice([
+                             f"I've never heard of \"{title}\", sorry... Tell me about another movie you liked.",
+                            f"Hmm, \"{title}\" isn't in my database. Can you tell me about another movie?",
+                            f"Sorry, but I couldn't find \"{title}\" in my records. Have any other movies in mind?",
+                            f"Looks like I don't know \"{title}\". Maybe you could tell me about a different movie?",
+                            f"I'm unfamiliar with \"{title}\". Want to talk about another movie you enjoyed?"
+                        ])
+                    elif len(MoviePlaces) == 1:
                         sentiment = self.extract_sentiment(self.preprocess(line))
-
+                        self.movieCount+=1
                         if sentiment == 1:
                             response = random.choice([
                                 f"Oh, I know \"{title}\" and I see you enjoyed it! What other movies have you watched?",
@@ -164,14 +172,19 @@ class Chatbot:
                             f"I haven’t heard of \"{title}\". Let’s talk about a different movie!"
                         ])
                 
-                    else:
-                        response = random.choice([
-                            "Can you be more specific? There are multiple movies with that name!",
-                            "There seem to be several movies with that title. Can you clarify?",
-                            "I found multiple matches for that movie. Could you specify the year?",
-                            "There’s more than one movie by that name. Can you give me more details?",
-                            "Looks like there are multiple versions of that film! Any specifics?"
-                        ])
+                else:
+                    response = random.choice([
+                        "Can you be more specific? There are multiple movies with that name!",
+                        "There seem to be several movies with that title. Can you clarify?",
+                        "I found multiple matches for that movie. Could you specify the year?",
+                        "There’s more than one movie by that name. Can you give me more details?",
+                        "Looks like there are multiple versions of that film! Any specifics?"
+                    ])
+
+                if self.movieCount==5:
+                    reccomendationIndex=self.recommend(self.user_ratings,self.ratings)[]
+                    reccomendedMovie=self.titles[reccomendationIndex][0]
+                    return response + "Now that you've shared 5 movies, I think you would like \"{reccomendedMovie}\". Would you like another recommendation?"
 
         ########################################################################
         #                          END OF YOUR CODE                            #
