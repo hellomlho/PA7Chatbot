@@ -117,12 +117,13 @@ class Chatbot:
             user_ratings = np.zeros(len(self.titles))
 
             if len(titles) == 0:
+                
                 response = random.choice([
-                    "That doesn't seem like a movie title I know. Try putting it in quotes!",
-                    "Hmm, I don’t recognize that. Could you wrap the movie title in quotes?",
-                    "I'm not sure about that one. If it's a movie, please use quotes!",
-                    "I can't quite tell if that's a movie title. Try adding quotes around it!",
-                    "Oops! I might not recognize that as a movie title. Quotes should help!"
+                    "Hmm, I don't recognize a movie title in what you just said. Would you please tell me about a movie you've seen recently?",
+                    "I didn't catch a movie title there. Could you mention a film you've watched?",
+                    "I'm here to talk about movies! Tell me about a movie you've seen.",
+                    "I don't see a movie title in your message. What’s a film you've watched recently?",
+                    "Oops! I think you forgot to mention a movie. Let’s talk about one!"
                 ])
             else:
                 for title in titles:
