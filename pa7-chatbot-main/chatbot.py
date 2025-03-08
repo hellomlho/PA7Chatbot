@@ -189,7 +189,6 @@ class Chatbot:
                     reccomendationIndex=self.recommend(user_ratings,self.ratings)[0]
                     reccomendedMovie=self.titles[reccomendationIndex][0]
                     return response + f" Now that you've shared 5 movies, I think you would like \"{reccomendedMovie}\". Would you like another recommendation?"
-
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
