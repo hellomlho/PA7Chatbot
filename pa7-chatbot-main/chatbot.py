@@ -108,9 +108,9 @@ class Chatbot:
             self.extract_emotion(line)
             #call API, access model
         else:
-            response = "I processed {} in Starter (GUS) mode!!".format(line)
+            response = "I processed {} in Starter (GUS) mode!!".formatx(line)
             titles=self.extract_titles(self.preprocess(line))
-            if len(titles):
+            if len(titles) == 0:
                 response="That isn't a movie title I'm familiar with. Can you please try putting it in quotes?"
             else:
                 for title in titles:
