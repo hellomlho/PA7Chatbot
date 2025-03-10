@@ -218,7 +218,7 @@ class Chatbot:
         #lowercase, no punctuation besides the movie in the quotations
 
         text=text.strip()
-        return text
+        return text 
 
         ########################################################################
         #                             END OF YOUR CODE                         #
