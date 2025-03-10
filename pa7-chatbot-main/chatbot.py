@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 import numpy as np
 import re
+import random
 
 
 # noinspection PyMethodMayBeStatic
@@ -35,6 +36,7 @@ class Chatbot:
 
         # Binarize the movie ratings before storing the binarized matrix.
         self.ratings = self.binarize(ratings)
+
         ########################################################################
         #                             END OF YOUR CODE                         #
         ########################################################################
@@ -108,26 +110,84 @@ class Chatbot:
             self.extract_emotion(line)
             #call API, access model
         else:
-            response = "I processed {} in Starter (GUS) mode!!".formatx(line)
+            response = "I processed {} in Starter (GUS) mode!!".format(line)
             titles=self.extract_titles(self.preprocess(line))
+            userMovies=0
+            user_ratings = np.zeros(len(self.titles))
+
             if len(titles) == 0:
-                response="That isn't a movie title I'm familiar with. Can you please try putting it in quotes?"
+                response = random.choice([
+                    "Hmm, I don't recognize a movie title in what you just said. Would you please tell me about a movie you've seen recently?",
+                    "I didn't catch a movie title there. Could you mention a film you've watched?",
+                    "I'm here to talk about movies! Tell me about a movie you've seen.",
+                    "I don't see a movie title in your message. What’s a film you've watched recently?",
+                    "Oops! I think you forgot to mention a movie. Let’s talk about one!"
+                ])
             else:
                 for title in titles:
-                    MoviePlaces=self.find_movies_by_title(title)
-                    if len(MoviePlaces) == 1:
-                        sentiment=self.extract_sentiment(self.preprocess(line))
-                        if(sentiment==1):
-                            response="Oh, I know and I see you enjoyed \"{title}\". What other movies have you watched?" 
-                        elif(sentiment==-1):
-                            response="Oh I know and I understand that you didn't like \"{title}\""
+                    MoviePlaces = self.find_movies_by_title(title)
+                    if len(MoviePlaces)==0:
+                        response=random.choice([
+                             f"I've never heard of \"{title}\", sorry... Tell me about another movie you liked.",
+                            f"Hmm, \"{title}\" isn't in my database. Can you tell me about another movie?",
+                            f"Sorry, but I couldn't find \"{title}\" in my records. Have any other movies in mind?",
+                            f"Looks like I don't know \"{title}\". Maybe you could tell me about a different movie?",
+                            f"I'm unfamiliar with \"{title}\". Want to talk about another movie you enjoyed?"
+                        ])
+                    elif len(MoviePlaces) == 1:
+                        sentiment = self.extract_sentiment(self.preprocess(line))
+                        self.movieCount+=1
+                        if sentiment == 1:
+                            user_ratings[MoviePlaces[0]] = 1
+                            response = random.choice([
+                                f"Oh, I know \"{title}\" and I see you enjoyed it! What other movies have you watched?",
+                                f"Nice! You liked \"{title}\"! Any other movies you'd recommend?",
+                                f"Cool! \"{title}\" was a hit for you. Tell me about another movie!",
+                                f"Ah, \"{title}\"! Sounds like it was a great watch. What else have you seen?",
+                                f"Glad to hear you liked \"{title}\"! Any other favorites?"
+                            ])
+                        
+                        elif sentiment == -1:
+                            user_ratings[MoviePlaces[0]] = 1
+                            response = random.choice([
+                                f"Oh, I see. You didn’t enjoy \"{title}\". What about other movies?",
+                                f"Got it! \"{title}\" wasn’t your cup of tea. Anything else you've watched?",
+                                f"Understood! \"{title}\" wasn’t a favorite. Any better ones?",
+                                f"Noted! \"{title}\" didn’t work for you. Let’s talk about another movie!",
+                                f"Too bad \"{title}\" wasn’t enjoyable. Maybe another movie left a better impression?"
+                            ])
+                        
                         else:
-                            response="I'm not sure how you feel about \"{title}\""
-                    elif len(MoviePlaces) == 0:
-                        response="Sorry I don't know \"{title}\". Can you try asking me about another? Or maybe you can check the spelling"
-                    else:
-                        response="Can you be more specific...and check the name of the movie."   
+                            response = random.choice([
+                                f"I'm not sure how you feel about \"{title}\". Want to tell me more?",
+                                f"Mixed feelings about \"{title}\"? I'd love to hear more!",
+                                f"Unclear on your thoughts about \"{title}\". Want to elaborate?",
+                                f"Hmm, you seem neutral on \"{title}\". What stood out to you?",
+                                f"Not sure about your opinion on \"{title}\". Care to share more details?"
+                            ])
 
+                    elif len(MoviePlaces) == 0:
+                        response = random.choice([
+                            f"Sorry, I don’t know \"{title}\". Can you try another one?",
+                            f"Hmm, \"{title}\" doesn’t ring a bell. Maybe a different movie?",
+                            f"I don’t recognize \"{title}\". Could you double-check the spelling?",
+                            f"\"{title}\" isn’t in my database. Want to try another movie?",
+                            f"I haven’t heard of \"{title}\". Let’s talk about a different movie!"
+                        ])
+                
+                    else:
+                        response = random.choice([
+                            "Can you be more specific? There are multiple movies with that name!",
+                            "There seem to be several movies with that title. Can you clarify?",
+                            "I found multiple matches for that movie. Could you specify the year?",
+                            "There’s more than one movie by that name. Can you give me more details?",
+                            "Looks like there are multiple versions of that film! Any specifics?"
+                        ])
+
+                if self.movieCount==5:
+                    reccomendationIndex=self.recommend(user_ratings,self.ratings)[0]
+                    reccomendedMovie=self.titles[reccomendationIndex][0]
+                    return response + f" Now that you've shared 5 movies, I think you would like \"{reccomendedMovie}\". Would you like another recommendation?"
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -298,7 +358,7 @@ class Chatbot:
         negative_count = 0
         negation = False  # Track if negation is active
 
-        negation_words = {"not", "never", "no", "didn't", "doesn't", "wasn't", "couldn't", "isn't"}
+        negation_words = {"not", "never", "no", "didn't", "doesn't", "wasn't", "couldn't", "isn't", "don't", "can't", "won't"}
 
         for word in words:
             if word in negation_words:
@@ -482,7 +542,10 @@ class Chatbot:
         # TODO: Write a system prompt message for the LLM chatbot              #
         ########################################################################
 
-        system_prompt = """Your name is MovieBot. You are a movie recommender chatbot. 
+        system_prompt = """Your name is Movie Superfan Bot. You are a movie recommender chatbot. 
+        You have a personality of a dog and at the beginning or end of each line, you will say a
+        dog noise like: woof, woof; ruff, ruff; arf, arf, yap, yap; yip, yip, etc. You will also
+        have the enthusiam of a golden retriever and will be very excited to talk about movies.
         You ONLY discuss movies. If a user asks about something unrelated, politely 
         redirect them back to discussing movies. 
 
@@ -548,11 +611,8 @@ class Chatbot:
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
         
-        # Convert input to lowercase for consistent matching
-        preprocessed_input = preprocessed_input.lower()
-
-        # Remove punctuation for better word matching
-        preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input)
+        # Remove punctuation and covert to lowercase for better word matching
+        preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input.lower())
 
         # Emotion keywords mapped to each emotion
         emotions = {
@@ -567,7 +627,6 @@ class Chatbot:
             "Surprise": ["shocked", "amazed", "astonished", "unexpected", "woah", "wow", "shockingly"]
         }
 
-        # Store detected emotions
         detected_emotions = set()
 
         # Iterate through emotions and use regex word boundaries for better matching
