@@ -868,13 +868,8 @@ class Chatbot:
         # LLM MODE
         system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
         The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
-        Consider both single words and common multi-word phrases that indicate these emotions.
-        Only return the detected emotions as a comma-separated list without any explanations or additional text.
-        If no clear emotion is present, return an empty list.
-        Ensure that you do not include any unrelated emotions or keywords.
-        For example:
-        - "That was shocking!" indicates Surprise.
-        - 'I am quite frustrated by these awful recommendations!!!' indicates Anger only, not Anger and Disgust.
+        If emotions are detected, return only the emotions that are clearly indicated by the text in a comma-separated list without any explanations. 
+        If no clear emotion is present, return an empty set.
         """
 
         message = f"Detect emotions in the following text: \"{preprocessed_input}\""
@@ -884,6 +879,7 @@ class Chatbot:
             response = util.simple_llm_call(system_prompt, message, max_tokens=50)
             detected_emotions = response.strip().split(',')
             filtered_emotions = {emotion.strip() for emotion in detected_emotions if emotion.strip() in valid_emotions}
+
             return filtered_emotions
         except Exception as e:
             print(f"Emotion detection error: {e}")
