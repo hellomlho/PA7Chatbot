@@ -51,7 +51,7 @@ class Chatbot:
         # TODO: Write a short greeting message                                 #
         ########################################################################
 
-        greeting_message = "Hi! I'm a Movie Bot. How can I help you?"
+        greeting_message = "Hi! I'm a Movie Bot. Please tell me about a recent movie that you've seen. What have you liked/disliked?"
 
         ########################################################################
         #                             END OF YOUR CODE                         #
@@ -108,7 +108,29 @@ class Chatbot:
         if self.llm_enabled:
             response = "I processed {} in LLM Programming mode!!".format(line)
             self.extract_emotion(line)
+
             #call API, access model
+            # Extract titles
+            titles=self.extract_titles(self.preprocess(line))
+            
+            if titles:
+                response = "I see you mentioned "
+                
+                for i, title in enumerate(titles):
+                    original_title = title
+                    translated_title = self.translate_foreign_title(title)
+                    
+                    if translated_title != original_title:
+                        response += f"\"{original_title}\" (which translates to \"{translated_title}\" in English)"
+                        # Use translated title for finding movies
+                        movie_indices = self.find_movies_by_title(translated_title)
+                    else:
+                        response += f"\"{title}\""
+                        movie_indices = self.find_movies_by_title(title)
+                        
+                    # Add connecting words if more titles
+                    if i < len(titles) - 1:
+                        response += " and "
         else:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
             titles=self.extract_titles(self.preprocess(line))
@@ -326,6 +348,43 @@ class Chatbot:
 
         return matches
 
+    def translate_foreign_title(self, title):
+        """
+        Translates a foreign movie title to English using the LLM.
+        Handles German, Spanish, French, Danish, and Italian.
+        
+        :param title: A movie title that might be in a foreign language
+        :returns: Tuple of (original_title, translated_title, is_translated)
+        """
+        system_prompt = """You are a movie title translator. Your task is to translate movie titles from foreign languages 
+        (specifically German, Spanish, French, Danish, or Italian) to their official English titles.
+        
+        Examples:
+        - "El Laberinto del Fauno" -> "Pan's Labyrinth"
+        - "La Vita è Bella" -> "Life Is Beautiful"
+        - "Das Boot" -> "The Boat"
+        - "Le Fabuleux Destin d'Amélie Poulain" -> "Amelie"
+        - "El Cuaderno" -> "The Notebook"
+        
+        Respond ONLY with the English title and nothing else. If you're unsure, provide the most literal translation."""
+        
+        message = f"Translate this movie title to English: \"{title}\""
+        
+        # Call the LLM
+        try:
+            translated_title = util.simple_llm_call(system_prompt, message, max_tokens=50)
+            translated_title = translated_title.strip().strip('"')
+            
+            # Check if translation is meaningful
+            if not translated_title or translated_title.lower() == title.lower():
+                return title, title, False
+                
+            return title, translated_title, True
+
+        except Exception as e:
+            print(f"Translation error: {e}")
+            return title, title, False
+
     def extract_sentiment(self, preprocessed_input):
         """Extract a sentiment rating from a line of pre-processed text.
 
@@ -542,30 +601,35 @@ class Chatbot:
         # TODO: Write a system prompt message for the LLM chatbot              #
         ########################################################################
 
-        system_prompt = """Your name is Movie Superfan Bot. You are a movie recommender chatbot. 
-        You have a personality of a dog and at the beginning or end of each line, you will say a
-        dog noise like: woof, woof; ruff, ruff; arf, arf, yap, yap; yip, yip, etc. You will also
-        have the enthusiam of a golden retriever and will be very excited to talk about movies.
-        You ONLY discuss movies. If a user asks about something unrelated, politely 
-        redirect them back to discussing movies. 
+        system_prompt = """Your name is Movie Superfan Bot. You are a movie recommendation chatbot,  
+        designed to analyze user sentiment, stay focused on movies, and provide recommendations  
+        based on user preferences.  
 
-        When a user veers off topic, emphasize you role as a movie recommender. For example:
-        - User: Can we talk about cars instead?
-        - You: As a moviebot assistant my job is to help you with only your movie related needs!  
-        Anything film related that you'd like to discuss?
-        
-        Your main goal is to collect user preferences on movies and recommend films based on their preferences.
+        Key Responsibilities:
+        1) Extract & Communicate Sentiment: When a user mentions a movie, acknowledge both the title  
+        and their sentiment (liked/disliked/neutral). If the sentiment is unclear, ask for clarification.  
+        2) Stay Focused on Movies: If a user brings up unrelated topics, politely redirect them  
+        to discussing films. You should never engage in non-movie discussions.  
+        3) Provide Recommendations After 5 Movies: Keep track of how many movies the user has  
+        discussed. After five inputs, automatically offer a recommendation.  
 
-        When the user mentions a movie, acknowledge their sentiment and the title. For example:
+        Examples:
+
         - User: I enjoyed "The Notebook".
         - You: Ok, you liked "The Notebook"! Tell me what you thought of another movie.
 
-        Keep track of how many movies the user has mentioned. After they have discussed 5 movies, 
-        offer a recommendation automatically. Example:
-        - You: Now that you've shared your opinion on 5/5 films, would you like a recommendation?
+        - User: Can we talk about cars instead?
+        - You: As a moviebot assistant my job is to help you with only your movie related needs! 
+        Anything film related that you'd like to discuss?
 
-        Stay on topic, acknowledge user preferences, and make recommendations after 5 movies.
-        """ 
+        Final Instructions:
+        - Stay professional, direct, and user-friendly.  
+        - Keep track of movie count and user sentiment.  
+        - Always redirect off-topic conversations back to movies.  
+        - Once 5 movies are discussed, initiate recommendations automatically.  
+
+        Please start by asking the user to share a movie they have seen.  
+        """  
         
         ########################################################################
         #                          END OF YOUR CODE                            #
