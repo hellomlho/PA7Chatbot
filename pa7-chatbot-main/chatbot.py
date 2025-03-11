@@ -676,7 +676,7 @@ class Chatbot:
             - You: Aww, some movies really tug at the heartstrings. Want me to fetch you a feel-good recommendation? Woof woof?
 
         Tracking Movie Preferences & Giving Recommendations:
-        - Keep count of how many movies the user has mentioned. Any time the user mentions a movie AND expresses their sentiment, increment the count by 1.
+        - Keep count of how many movies the user has mentioned. ANY time the user mentions a movie (there will be quotes) AND expresses their sentiment, increment the count by 1.
         - After the user mentions 5 movies, automatically offer a recommendation with excitement.
         - Example:
             - You: wiggles excitedly WOWZA! You've told me about 5/5 movies! Now it's my turn! Want a tail-waggingly great recommendation? WOOF WOOF!
@@ -785,8 +785,7 @@ class Chatbot:
         # LLM MODE
         system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
         The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
-        If emotions are detected, return only the emotions that are clearly indicated by the text in a comma-separated list without any explanations. 
-        If no clear emotion is present, return an empty set.
+        Return a list of detected emotions or an empty list if none are found.
         """
 
         message = f"Detect emotions in the following text: \"{preprocessed_input}\""
