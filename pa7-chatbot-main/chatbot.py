@@ -785,7 +785,8 @@ class Chatbot:
         # LLM MODE
         system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
         The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
-        Return a list of detected emotions or an empty list if none are found.
+        If emotions are detected, return only the emotions that are clearly indicated by the text in a comma-separated list without any explanations. 
+        If no clear emotion is present, return an empty set.
         """
 
         message = f"Detect emotions in the following text: \"{preprocessed_input}\""
