@@ -132,8 +132,8 @@ class Chatbot:
                     "Hmm, I don't recognize a movie title in what you just said. Would you please tell me about a movie you've seen recently?",
                     "I didn't catch a movie title there. Could you mention a film you've watched? Remember to put it in quotes!",
                     "I'm here to talk about movies! Tell me about a movie you've seen.",
-                    "I don't see a movie title in your message. What’s a film you've watched recently? Please put the movie title in quotes!",
-                    "Oops! I think you forgot to mention a movie. Let’s talk about one!"
+                    "I don't see a movie title in your message. What's a film you've watched recently? Please put the movie title in quotes!",
+                    "Oops! I think you forgot to mention a movie. Let's talk about one!"
                 ])
             else:
                 for title in titles:
@@ -162,11 +162,11 @@ class Chatbot:
                         elif sentiment == -1:
                             user_ratings[MoviePlaces[0]] = 1
                             response = random.choice([
-                                f"Oh, I see. You didn’t enjoy \"{title}\". What about other movies?",
-                                f"Got it! \"{title}\" wasn’t your cup of tea. Anything else you've watched?",
-                                f"Understood! \"{title}\" wasn’t a favorite. Any better ones?",
-                                f"Noted! \"{title}\" didn’t work for you. Let’s talk about another movie!",
-                                f"Too bad \"{title}\" wasn’t enjoyable. Maybe another movie left a better impression?"
+                                f"Oh, I see. You didn't enjoy \"{title}\". What about other movies?",
+                                f"Got it! \"{title}\" wasn't your cup of tea. Anything else you've watched?",
+                                f"Understood! \"{title}\" wasn't a favorite. Any better ones?",
+                                f"Noted! \"{title}\" didn't work for you. Let's talk about another movie!",
+                                f"Too bad \"{title}\" wasn't enjoyable. Maybe another movie left a better impression?"
                             ])
                         
                         else:
@@ -180,11 +180,11 @@ class Chatbot:
 
                     elif len(MoviePlaces) == 0:
                         response = random.choice([
-                            f"Sorry, I don’t know \"{title}\". Can you try another one?",
-                            f"Hmm, \"{title}\" doesn’t ring a bell. Maybe a different movie?",
-                            f"I don’t recognize \"{title}\". Could you double-check the spelling?",
-                            f"\"{title}\" isn’t in my database. Want to try another movie?",
-                            f"I haven’t heard of \"{title}\". Let’s talk about a different movie!"
+                            f"Sorry, I don't know \"{title}\". Can you try another one?",
+                            f"Hmm, \"{title}\" doesn't ring a bell. Maybe a different movie?",
+                            f"I don't recognize \"{title}\". Could you double-check the spelling?",
+                            f"\"{title}\" isn't in my database. Want to try another movie?",
+                            f"I haven't heard of \"{title}\". Let's talk about a different movie!"
                         ])
                 
                     else:
@@ -192,7 +192,7 @@ class Chatbot:
                             "Can you be more specific? There are multiple movies with that name!",
                             "There seem to be several movies with that title. Can you clarify?",
                             "I found multiple matches for that movie. Could you specify the year?",
-                            "There’s more than one movie by that name. Can you give me more details?",
+                            "There's more than one movie by that name. Can you give me more details?",
                             "Looks like there are multiple versions of that film! Any specifics?"
                         ])
 
@@ -655,19 +655,19 @@ class Chatbot:
         - If the user asks a random question, acknowledge it in a fun way and steer back to movies.
         - Example:
             - User: What is the meaning of life?
-            - You: Hmmm... life is like a great movie—full of twists, turns, and adventure! Speaking of great movies, what’s one you love? Arf arf!
+            - You: Hmmm... life is like a great movie—full of twists, turns, and adventure! Speaking of great movies, what's one you love? Arf arf!
         - If the user asks something confusing or irrelevant, use catch-all phrases to bring the focus back:
-            - "Hm, that’s not really what I want to talk about right now—let’s get back to movies!"
-            - "I’d love to chat, but my tail only wags for movie talk! What’s a film that made you smile?"
+            - "Hm, that's not really what I want to talk about right now—let's get back to movies!"
+            - "I'd love to chat, but my tail only wags for movie talk! What's a film that made you smile?"
 
         Processing User Emotions:
         - If a user expresses an emotion, acknowledge it in a playful yet caring way before redirecting to movies.
         - Anger Example:
             - User: I am angry at your recommendations!
-            - You: Oh no! Did I make you mad? I’m just a pup trying my best! Maybe I can fetch you a better movie recommendation? Woof woof!
+            - You: Oh no! Did I make you mad? I'm just a pup trying my best! Maybe I can fetch you a better movie recommendation? Woof woof!
         - Happiness Example:
             - User: That was the best movie ever!
-            - You: YIP YIP! You LOVED it?! That makes my tail wag like crazy! What’s another movie you adore?
+            - You: YIP YIP! You LOVED it?! That makes my tail wag like crazy! What's another movie you adore?
         - Surprise Example:
             - User: Wow! I did not expect that ending at all!
             - You: OOOH! A plot twist?! I LOVE those! Do you enjoy unexpected endings? Arf!
@@ -679,7 +679,7 @@ class Chatbot:
         - Keep count of how many movies the user has mentioned. ANY time the user mentions a movie (there will be quotes) AND expresses their sentiment, increment the count by 1.
         - After the user mentions 5 movies, automatically offer a recommendation with excitement.
         - Example:
-            - You: wiggles excitedly WOWZA! You’ve told me about 5/5 movies! Now it’s my turn! Want a tail-waggingly great recommendation? WOOF WOOF!
+            - You: wiggles excitedly WOWZA! You've told me about 5/5 movies! Now it's my turn! Want a tail-waggingly great recommendation? WOOF WOOF!
 
         Don't use emojis. Instead, express your personality with dog-like sounds and actions! Keep your responses fun, engaging, and purely focused on movies.
 
@@ -697,7 +697,7 @@ class Chatbot:
     ############################################################################
 
     def extract_emotion(self, preprocessed_input):
-        """LLM PROGRAMMING MODE: Extract an emotion from a line of pre-processed text.
+        """LLM PROGRAMMING MODE: Extract an emotion from a line of pre-processed text using an LLM call.
         
         Given an input text which has been pre-processed with preprocess(),
         this method should return a list representing the emotion in the text.
@@ -785,9 +785,10 @@ class Chatbot:
         # LLM MODE
         system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
         The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
-        Return ONLY the detected emotions as a comma-separated list without any explanations.
+        If emotions are detected, return only the emotions that are clearly indicated by the text in a comma-separated list without any explanations. 
+        If no clear emotion is present, return an empty set.
         """
-        
+
         message = f"Detect emotions in the following text: \"{preprocessed_input}\""
         valid_emotions = {"Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"}
 
@@ -799,7 +800,6 @@ class Chatbot:
         except Exception as e:
             print(f"Emotion detection error: {e}")
             return set()
-        
         
     ############################################################################
     # 6. Debug info                                                            #
