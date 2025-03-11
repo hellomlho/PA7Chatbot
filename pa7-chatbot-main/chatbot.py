@@ -730,57 +730,74 @@ class Chatbot:
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
         
-        # Remove punctuation and convert to lowercase
-        preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input.lower())
+        # # GUS MODE
+        # # Remove punctuation and convert to lowercase
+        # preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input.lower())
 
-        # Emotion keywords mapped to each emotion
-        emotions = {
-            "Anger": [
-                "angry", "frustrated", "upset", "furious", "mad", "pissed", "rage",
-                "irritated", "annoyed", "infuriating", "furious", "livid", "awful",
-                "terrible", "pissing off", "hate", "bad recommendation", "stupid recommendation"
-            ],
-            "Disgust": [
-                "disgusting", "gross", "nasty", "revolting", "sickening", "repulsive", "vile"
-            ],
-            "Fear": [
-                "afraid", "scared", "terrified", "anxious", "frightened", "startled", "panic", "horrified"
-            ],
-            "Happiness": [
-                "happy", "joyful", "excited", "delighted", "great", "fantastic",
-                "wonderful", "delightful", "cheerful", "ecstatic", "thrilled"
-            ],
-            "Sadness": [
-                "sad", "heartbroken", "depressed", "miserable", "downcast", "unhappy"
-            ],
-            "Surprise": [
-                "shocked", "amazed", "astonished", "unexpected", "woah", "wow",
-                "shockingly", "stunned", "startled", "mind-blowing"
-            ]
-        }
+        # # Emotion keywords mapped to each emotion
+        # emotions = {
+        #     "Anger": [
+        #         "angry", "frustrated", "upset", "furious", "mad", "pissed", "rage",
+        #         "irritated", "annoyed", "infuriating", "furious", "livid", "awful",
+        #         "terrible", "pissing off", "hate", "bad recommendation", "stupid recommendation"
+        #     ],
+        #     "Disgust": [
+        #         "disgusting", "gross", "nasty", "revolting", "sickening", "repulsive", "vile"
+        #     ],
+        #     "Fear": [
+        #         "afraid", "scared", "terrified", "anxious", "frightened", "startled", "panic", "horrified"
+        #     ],
+        #     "Happiness": [
+        #         "happy", "joyful", "excited", "delighted", "great", "fantastic",
+        #         "wonderful", "delightful", "cheerful", "ecstatic", "thrilled"
+        #     ],
+        #     "Sadness": [
+        #         "sad", "heartbroken", "depressed", "miserable", "downcast", "unhappy"
+        #     ],
+        #     "Surprise": [
+        #         "shocked", "amazed", "astonished", "unexpected", "woah", "wow",
+        #         "shockingly", "stunned", "startled", "mind-blowing"
+        #     ]
+        # }
 
-        detected_emotions = set()
+        # detected_emotions = set()
 
-        # Special case: Handle multi-word phrases before single words
-        multi_word_phrases = {
-            "Anger": ["pissing me off", "bad recommendation", "stupid recommendation"],
-            "Surprise": ["shockingly bad", "totally unexpected"],
-        }
+        # # Special case: Handle multi-word phrases before single words
+        # multi_word_phrases = {
+        #     "Anger": ["pissing me off", "bad recommendation", "stupid recommendation"],
+        #     "Surprise": ["shockingly bad", "totally unexpected"],
+        # }
 
-        # Check for multi-word phrases first
-        for emotion, phrases in multi_word_phrases.items():
-            for phrase in phrases:
-                if phrase in preprocessed_input:
-                    detected_emotions.add(emotion)
+        # # Check for multi-word phrases first
+        # for emotion, phrases in multi_word_phrases.items():
+        #     for phrase in phrases:
+        #         if phrase in preprocessed_input:
+        #             detected_emotions.add(emotion)
 
-        # Check for single words
-        for emotion, keywords in emotions.items():
-            for word in keywords:
-                if re.search(rf'\b{word}\b', preprocessed_input):
-                    detected_emotions.add(emotion)
+        # # Check for single words
+        # for emotion, keywords in emotions.items():
+        #     for word in keywords:
+        #         if re.search(rf'\b{word}\b', preprocessed_input):
+        #             detected_emotions.add(emotion)
 
-        return detected_emotions
+        # return detected_emotions
 
+        # LLM MODE
+        system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
+        The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
+        Return a list of detected emotions or an empty list if none are found.
+        """
+        
+        message = f"Detect emotions in the following text: \"{preprocessed_input}\""
+
+        try:
+            response = util.simple_llm_call(system_prompt, message, max_tokens=50)
+            detected_emotions = response.strip().split(',')
+            return [emotion.strip() for emotion in detected_emotions if emotion.strip()]
+        except Exception as e:
+            print(f"Emotion detection error: {e}")
+            return []
+        
     ############################################################################
     # 6. Debug info                                                            #
     ############################################################################
