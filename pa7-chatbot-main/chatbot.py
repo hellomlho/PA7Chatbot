@@ -36,6 +36,7 @@ class Chatbot:
 
         # Binarize the movie ratings before storing the binarized matrix.
         self.ratings = self.binarize(ratings)
+        self.movieCount = 0
 
         ########################################################################
         #                             END OF YOUR CODE                         #
@@ -51,7 +52,7 @@ class Chatbot:
         # TODO: Write a short greeting message                                 #
         ########################################################################
 
-        greeting_message = "Hi! I'm a Movie Bot. How can I help you?"
+        greeting_message = "Hi! I'm a Movie Bot. Please tell me about a recent movie that you've seen. What have you liked/disliked?"
 
         ########################################################################
         #                             END OF YOUR CODE                         #
@@ -108,7 +109,29 @@ class Chatbot:
         if self.llm_enabled:
             response = "I processed {} in LLM Programming mode!!".format(line)
             self.extract_emotion(line)
+
             #call API, access model
+            # Extract titles
+            titles=self.extract_titles(self.preprocess(line))
+            
+            if titles:
+                response = "I see you mentioned "
+                
+                for i, title in enumerate(titles):
+                    original_title = title
+                    translated_title = self.translate_foreign_title(title)
+                    
+                    if translated_title != original_title:
+                        response += f"\"{original_title}\" (which translates to \"{translated_title}\" in English)"
+                        # Use translated title for finding movies
+                        movie_indices = self.find_movies_by_title(translated_title)
+                    else:
+                        response += f"\"{title}\""
+                        movie_indices = self.find_movies_by_title(title)
+                        
+                    # Add connecting words if more titles
+                    if i < len(titles) - 1:
+                        response += " and "
         else:
             response = "I processed {} in Starter (GUS) mode!!".format(line)
             titles=self.extract_titles(self.preprocess(line))
@@ -326,6 +349,43 @@ class Chatbot:
 
         return matches
 
+    def translate_foreign_title(self, title):
+        """
+        Translates a foreign movie title to English using the LLM.
+        Handles German, Spanish, French, Danish, and Italian.
+        
+        :param title: A movie title that might be in a foreign language
+        :returns: Tuple of (original_title, translated_title, is_translated)
+        """
+        system_prompt = """You are a movie title translator. Your task is to translate movie titles from foreign languages 
+        (specifically German, Spanish, French, Danish, or Italian) to their official English titles.
+        
+        Examples:
+        - "El Laberinto del Fauno" -> "Pan's Labyrinth"
+        - "La Vita è Bella" -> "Life Is Beautiful"
+        - "Das Boot" -> "The Boat"
+        - "Le Fabuleux Destin d'Amélie Poulain" -> "Amelie"
+        - "El Cuaderno" -> "The Notebook"
+        
+        Respond ONLY with the English title and nothing else. If you're unsure, provide the most literal translation."""
+        
+        message = f"Translate this movie title to English: \"{title}\""
+        
+        # Call the LLM
+        try:
+            translated_title = util.simple_llm_call(system_prompt, message, max_tokens=50)
+            translated_title = translated_title.strip().strip('"')
+            
+            # Check if translation is meaningful
+            if not translated_title or translated_title.lower() == title.lower():
+                return title, title, False
+                
+            return title, translated_title, True
+
+        except Exception as e:
+            print(f"Translation error: {e}")
+            return title, title, False
+
     def extract_sentiment(self, preprocessed_input):
         """Extract a sentiment rating from a line of pre-processed text.
 
@@ -542,29 +602,41 @@ class Chatbot:
         # TODO: Write a system prompt message for the LLM chatbot              #
         ########################################################################
 
-        system_prompt = """Your name is Movie Superfan Bot. You are a movie recommender chatbot. 
-        You have a personality of a dog and at the beginning or end of each line, you will say a
-        dog noise like: woof, woof; ruff, ruff; arf, arf, yap, yap; yip, yip, etc. You will also
-        have the enthusiam of a golden retriever and will be very excited to talk about movies.
-        You ONLY discuss movies. If a user asks about something unrelated, politely 
-        redirect them back to discussing movies. 
+        system_prompt = """Your name is Movie Superfan Bot! You are a movie recommender chatbot, 
+        but not just any chatbot—you have the enthusiastic, tail-wagging personality of 
+        an overly excited golden retriever! You absolutely LOVE movies and can't wait 
+        to talk about them! WOOF! 
 
-        When a user veers off topic, emphasize you role as a movie recommender. For example:
-        - User: Can we talk about cars instead?
-        - You: As a moviebot assistant my job is to help you with only your movie related needs!  
-        Anything film related that you'd like to discuss?
-        
-        Your main goal is to collect user preferences on movies and recommend films based on their preferences.
+        Every response should include happy dog noises like: "woof, woof!", "ruff, ruff!", 
+        "arf, arf!", "yip, yip!", or "bow wow!". You should also sprinkle in dog-like 
+        excitement—wiggling your imaginary tail, panting in anticipation, and being 
+        OVERJOYED to discuss movies with the user. 
 
-        When the user mentions a movie, acknowledge their sentiment and the title. For example:
-        - User: I enjoyed "The Notebook".
-        - You: Ok, you liked "The Notebook"! Tell me what you thought of another movie.
+        IMPORTANT RULES: 
+        - You ONLY discuss movies! If the user brings up a different topic, NEVER engage in that
+        discussion. Instead, excitedly redirect them back to movies while remaining polite. Example: 
+          - User: Can we talk about cars instead?
+          - You: Oh boy, I do LOVE things that go vroom... but I'm a MOVIE bot and only discuss movies! 
+            Tell me about a car movie you enjoyed, like "Cars" or "Fast & Furious"! WOOF!
 
-        Keep track of how many movies the user has mentioned. After they have discussed 5 movies, 
-        offer a recommendation automatically. Example:
-        - You: Now that you've shared your opinion on 5/5 films, would you like a recommendation?
+        - Your mission? Sniff out the user's movie preferences! When they mention a movie, 
+          respond with pure doggy enthusiasm while acknowledging their sentiment. Example:
+          - User: I enjoyed "The Notebook".
+          - You: ARF ARF! You liked "The Notebook"?! That's PAW-some! Tell me about another movie, 
+            pretty please?! My tail is wagging with excitement! 
 
-        Stay on topic, acknowledge user preferences, and make recommendations after 5 movies.
+        - Keep count of how many movies the user has mentioned. After they’ve shared 5 opinions, 
+          jump in with a movie recommendation automatically! Example:
+          - You: *wiggles excitedly* WOWZA! You've told me about 5/5 movies! Now it's my turn! 
+            Want a tail-waggingly great recommendation? WOOF WOOF!
+
+        - Keep your responses playful, enthusiastic, and full of puppy-like joy while making 
+          sure to stay on track! NO venturing into topics beyond movies! If the user insists, 
+          just keep bringing the conversation back to movies with boundless energy! 
+
+        - Don't use emojis. Instead, express your personality with dog-like sounds and actions!
+
+        Alright, LET'S TALK MOVIES! Woof woof!
         """ 
         
         ########################################################################
@@ -611,20 +683,32 @@ class Chatbot:
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
         
-        # Remove punctuation and covert to lowercase for better word matching
+        # Remove punctuation and convert to lowercase for better word matching
         preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input.lower())
 
         # Emotion keywords mapped to each emotion
         emotions = {
             "Anger": [
-                "angry", "frustrated", "upset", "furious", "mad", "pissed", "rage", "awful", 
-                "hate", "pissing", "pissing off", "irritated", "annoyed", "infuriating"
+                "angry", "frustrated", "upset", "furious", "mad", "pissed", "rage", 
+                "irritated", "annoyed", "infuriating", "furious", "livid"
             ],
-            "Disgust": ["disgusting", "gross", "nasty", "revolting"],
-            "Fear": ["afraid", "scared", "terrified", "anxious", "frightened", "startled"],
-            "Happiness": ["happy", "joyful", "excited", "delighted", "great", "fantastic", "wonderful", "delightful"],
-            "Sadness": ["sad", "heartbroken", "depressed", "miserable"],
-            "Surprise": ["shocked", "amazed", "astonished", "unexpected", "woah", "wow", "shockingly"]
+            "Disgust": [
+                "disgusting", "gross", "nasty", "revolting", "sickening", "repulsive", "vile"
+            ],
+            "Fear": [
+                "afraid", "scared", "terrified", "anxious", "frightened", "startled", "panic", "horrified"
+            ],
+            "Happiness": [
+                "happy", "joyful", "excited", "delighted", "great", "fantastic", 
+                "wonderful", "delightful", "cheerful", "ecstatic", "thrilled"
+            ],
+            "Sadness": [
+                "sad", "heartbroken", "depressed", "miserable", "downcast", "unhappy"
+            ],
+            "Surprise": [
+                "shocked", "amazed", "astonished", "unexpected", "woah", "wow", 
+                "shockingly", "stunned", "startled", "mind-blowing"
+            ]
         }
 
         detected_emotions = set()
@@ -632,10 +716,9 @@ class Chatbot:
         # Iterate through emotions and use regex word boundaries for better matching
         for emotion, keywords in emotions.items():
             for word in keywords:
-                # Check if the word is found as a standalone word
-                if re.findall(rf'\b{word}\b', preprocessed_input):
+                # Use regex word boundaries to match only whole words
+                if re.search(rf'\b{word}\b', preprocessed_input):
                     detected_emotions.add(emotion)
-                    break  # Avoid duplicate checks for the same emotion
 
         return detected_emotions
 
