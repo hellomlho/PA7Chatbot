@@ -352,7 +352,7 @@ class Chatbot:
 
         - If the movie title is in one of those languages, respond with EXACTLY "YES".
         - If the title is already in English, respond with EXACTLY "NO".
-        - Your response MUST be **ONLY** "YES" or "NO" with no additional words.
+        - Your response MUST be ONLY "YES" or "NO" with no additional words.
         - Do NOT add explanations, extra punctuation, or additional text.
 
         Example Inputs and Outputs:
