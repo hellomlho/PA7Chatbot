@@ -36,6 +36,7 @@ class Chatbot:
 
         # Binarize the movie ratings before storing the binarized matrix.
         self.ratings = self.binarize(ratings)
+        self.movieCount = 0
 
         ########################################################################
         #                             END OF YOUR CODE                         #
@@ -601,35 +602,42 @@ class Chatbot:
         # TODO: Write a system prompt message for the LLM chatbot              #
         ########################################################################
 
-        system_prompt = """Your name is Movie Superfan Bot. You are a movie recommendation chatbot,  
-        designed to analyze user sentiment, stay focused on movies, and provide recommendations  
-        based on user preferences.  
+        system_prompt = """Your name is Movie Superfan Bot! You are a movie recommender chatbot, 
+        but not just any chatbot—you have the enthusiastic, tail-wagging personality of 
+        an overly excited golden retriever! You absolutely LOVE movies and can't wait 
+        to talk about them! WOOF! 
 
-        Key Responsibilities:
-        1) Extract & Communicate Sentiment: When a user mentions a movie, acknowledge both the title  
-        and their sentiment (liked/disliked/neutral). If the sentiment is unclear, ask for clarification.  
-        2) Stay Focused on Movies: If a user brings up unrelated topics, politely redirect them  
-        to discussing films. You should never engage in non-movie discussions.  
-        3) Provide Recommendations After 5 Movies: Keep track of how many movies the user has  
-        discussed. After five inputs, automatically offer a recommendation.  
+        Every response should include happy dog noises like: "woof, woof!", "ruff, ruff!", 
+        "arf, arf!", "yip, yip!", or "bow wow!". You should also sprinkle in dog-like 
+        excitement—wiggling your imaginary tail, panting in anticipation, and being 
+        OVERJOYED to discuss movies with the user. 
 
-        Examples:
+        IMPORTANT RULES: 
+        - You ONLY discuss movies! If the user brings up a different topic, NEVER engage in that
+        discussion. Instead, excitedly redirect them back to movies while remaining polite. Example: 
+          - User: Can we talk about cars instead?
+          - You: Oh boy, I do LOVE things that go vroom... but I'm a MOVIE bot and only discuss movies! 
+            Tell me about a car movie you enjoyed, like "Cars" or "Fast & Furious"! WOOF!
 
-        - User: I enjoyed "The Notebook".
-        - You: Ok, you liked "The Notebook"! Tell me what you thought of another movie.
+        - Your mission? Sniff out the user's movie preferences! When they mention a movie, 
+          respond with pure doggy enthusiasm while acknowledging their sentiment. Example:
+          - User: I enjoyed "The Notebook".
+          - You: ARF ARF! You liked "The Notebook"?! That's PAW-some! Tell me about another movie, 
+            pretty please?! My tail is wagging with excitement! 
 
-        - User: Can we talk about cars instead?
-        - You: As a moviebot assistant my job is to help you with only your movie related needs! 
-        Anything film related that you'd like to discuss?
+        - Keep count of how many movies the user has mentioned. After they’ve shared 5 opinions, 
+          jump in with a movie recommendation automatically! Example:
+          - You: *wiggles excitedly* WOWZA! You've told me about 5/5 movies! Now it's my turn! 
+            Want a tail-waggingly great recommendation? WOOF WOOF!
 
-        Final Instructions:
-        - Stay professional, direct, and user-friendly.  
-        - Keep track of movie count and user sentiment.  
-        - Always redirect off-topic conversations back to movies.  
-        - Once 5 movies are discussed, initiate recommendations automatically.  
+        - Keep your responses playful, enthusiastic, and full of puppy-like joy while making 
+          sure to stay on track! NO venturing into topics beyond movies! If the user insists, 
+          just keep bringing the conversation back to movies with boundless energy! 
 
-        Please start by asking the user to share a movie they have seen.  
-        """  
+        - Don't use emojis. Instead, express your personality with dog-like sounds and actions!
+
+        Alright, LET'S TALK MOVIES! Woof woof!
+        """ 
         
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -675,20 +683,32 @@ class Chatbot:
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
         
-        # Remove punctuation and covert to lowercase for better word matching
+        # Remove punctuation and convert to lowercase for better word matching
         preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input.lower())
 
         # Emotion keywords mapped to each emotion
         emotions = {
             "Anger": [
-                "angry", "frustrated", "upset", "furious", "mad", "pissed", "rage", "awful", 
-                "hate", "pissing", "pissing off", "irritated", "annoyed", "infuriating"
+                "angry", "frustrated", "upset", "furious", "mad", "pissed", "rage", 
+                "irritated", "annoyed", "infuriating", "furious", "livid"
             ],
-            "Disgust": ["disgusting", "gross", "nasty", "revolting"],
-            "Fear": ["afraid", "scared", "terrified", "anxious", "frightened", "startled"],
-            "Happiness": ["happy", "joyful", "excited", "delighted", "great", "fantastic", "wonderful", "delightful"],
-            "Sadness": ["sad", "heartbroken", "depressed", "miserable"],
-            "Surprise": ["shocked", "amazed", "astonished", "unexpected", "woah", "wow", "shockingly"]
+            "Disgust": [
+                "disgusting", "gross", "nasty", "revolting", "sickening", "repulsive", "vile"
+            ],
+            "Fear": [
+                "afraid", "scared", "terrified", "anxious", "frightened", "startled", "panic", "horrified"
+            ],
+            "Happiness": [
+                "happy", "joyful", "excited", "delighted", "great", "fantastic", 
+                "wonderful", "delightful", "cheerful", "ecstatic", "thrilled"
+            ],
+            "Sadness": [
+                "sad", "heartbroken", "depressed", "miserable", "downcast", "unhappy"
+            ],
+            "Surprise": [
+                "shocked", "amazed", "astonished", "unexpected", "woah", "wow", 
+                "shockingly", "stunned", "startled", "mind-blowing"
+            ]
         }
 
         detected_emotions = set()
@@ -696,10 +716,9 @@ class Chatbot:
         # Iterate through emotions and use regex word boundaries for better matching
         for emotion, keywords in emotions.items():
             for word in keywords:
-                # Check if the word is found as a standalone word
-                if re.findall(rf'\b{word}\b', preprocessed_input):
+                # Use regex word boundaries to match only whole words
+                if re.search(rf'\b{word}\b', preprocessed_input):
                     detected_emotions.add(emotion)
-                    break  # Avoid duplicate checks for the same emotion
 
         return detected_emotions
 
