@@ -310,6 +310,14 @@ class Chatbot:
         # Matching movie indices list
         matches = []
 
+        # Check if the title (without year) is in a foreign language
+        if not matches:
+            if self.is_foreign_language_llm(title_clean):  
+                translated_title = self.translate_title_to_english(title_clean)  # Only translate the cleaned title
+                if translated_title and translated_title.lower() != title_clean:  
+                    new_title_with_year = f"{translated_title} ({year})" if year else translated_title  
+                    return self.find_movies_by_title(new_title_with_year)  # Retry with translated title
+
         # Iterate over movie database to find matches
         for idx, movie_entry in enumerate(self.titles):
             movie_title = movie_entry[0].lower()
@@ -328,14 +336,6 @@ class Chatbot:
                     else:
                         matches.append(idx)
                         break
-
-        # Check if the title (without year) is in a foreign language
-        if not matches:
-            if self.is_foreign_language_llm(title_clean):  
-                translated_title = self.translate_title_to_english(title_clean)  # Only translate the cleaned title
-                if translated_title and translated_title.lower() != title_clean:  
-                    new_title_with_year = f"{translated_title} ({year})" if year else translated_title  
-                    return self.find_movies_by_title(new_title_with_year)  # Retry with translated title
 
         return matches
     
