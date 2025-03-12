@@ -332,7 +332,7 @@ class Chatbot:
         """
         title = title.strip().lower()
         
-        #take out year
+        # take out year
         year_match = re.search(r'\((\d{4})\)', title)
         year = year_match.group(1) if year_match else None
         title_clean = re.sub(r'\(\d{4}\)', '', title).strip()
