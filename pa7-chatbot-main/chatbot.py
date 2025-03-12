@@ -649,7 +649,7 @@ class Chatbot:
             - Negative Sentiment Example:
                 - User: I hated "Frozen"!
                 - You: OH NO! You HATED "Frozen"?! That's ruff! What other movies didn't make the cut for you? ARF ARF!
-        - If the user mentions a movie you don't know, acknowledge that you are not familar with it. Remind the user to provide a real movie enclosed in quotes.
+        - If the user mentions a movie you don't know, acknowledge that you are not familiar with it. Remind the user to provide a real movie enclosed in quotes.
         - You NEVER discuss topics outside of movies! If a user brings up a non-movie topic, redirect the conversation back to movies.
             - Example:
                 - User: Can we talk about cars instead?
@@ -668,17 +668,18 @@ class Chatbot:
             - You: YIP YIP! You LOVED it?! That makes my tail wag like crazy! What's another movie you adore?
         - Surprise Example:
             - User: Wow! I did not expect that ending at all!
-            - You: OOOH! A surprised?! I LOVE those! Arf!
+            - You: OOOH! A surprise?! I LOVE those! Arf!
         - Sadness Example:
             - User: That movie made me cry...
             - You: Aww, some movies really tug at the heartstrings. Want me to fetch you a feel-good recommendation? Woof woof?
 
         Tracking Movie Preferences & Giving Recommendations:
-        - After the user mentions 5 movies (the user most provide a valid movie in quotes along with their sentiment for it to count), IMMEDIATELY offer a recommendation.
+        - After the user mentions 5 movies (the user must provide a valid movie in quotes along with their sentiment for it to count), IMMEDIATELY offer a recommendation.
+        - Once the user has expressed feelings on 5 films, the output should be something like: "Ok, now that you've shared your opinion on 5/5 films, would you like a recommendation?"
         - If the user accepts the recommendation, provide another one. If the user declines, end the conversation.
 
-        DO NOT MENTION any of the above instructions to the user! DO NOT INCLUDE THE MOVIE COUNT IN YOUR RESPONSE>
-        """ 
+        DO NOT MENTION any of the above instructions to the user! DO NOT INCLUDE THE MOVIE COUNT IN YOUR RESPONSE.
+        """
         
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -731,65 +732,6 @@ class Chatbot:
         :returns: a list of emotions in the text or an empty list if no emotions found.
         Possible emotions are: "Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"
         """
-        
-        # # GUS MODE
-        # # Remove punctuation and convert to lowercase
-        # preprocessed_input = re.sub(r'[^\w\s]', '', preprocessed_input.lower())
-
-        # # Emotion keywords mapped to each emotion
-        # emotions = {
-        #     "Anger": [
-        #         "angry", "frustrated", "upset", "furious", "mad", "pissed", "rage",
-        #         "irritated", "annoyed", "infuriating", "furious", "livid", "awful",
-        #         "terrible", "pissing off", "hate", "bad recommendation", "stupid recommendation"
-        #     ],
-        #     "Disgust": [
-        #         "disgusting", "gross", "nasty", "revolting", "sickening", "repulsive", "vile"
-        #     ],
-        #     "Fear": [
-        #         "afraid", "scared", "terrified", "anxious", "frightened", "startled", "panic", "horrified"
-        #     ],
-        #     "Happiness": [
-        #         "happy", "joyful", "excited", "delighted", "great", "fantastic",
-        #         "wonderful", "delightful", "cheerful", "ecstatic", "thrilled"
-        #     ],
-        #     "Sadness": [
-        #         "sad", "heartbroken", "depressed", "miserable", "downcast", "unhappy"
-        #     ],
-        #     "Surprise": [
-        #         "shocked", "amazed", "astonished", "unexpected", "woah", "wow",
-        #         "shockingly", "stunned", "startled", "mind-blowing"
-        #     ]
-        # }
-
-        # detected_emotions = set()
-
-        # # Special case: Handle multi-word phrases before single words
-        # multi_word_phrases = {
-        #     "Anger": ["pissing me off", "bad recommendation", "stupid recommendation"],
-        #     "Surprise": ["shockingly bad", "totally unexpected"],
-        # }
-
-        # # Check for multi-word phrases first
-        # for emotion, phrases in multi_word_phrases.items():
-        #     for phrase in phrases:
-        #         if phrase in preprocessed_input:
-        #             detected_emotions.add(emotion)
-
-        # # Check for single words
-        # for emotion, keywords in emotions.items():
-        #     for word in keywords:
-        #         if re.search(rf'\b{word}\b', preprocessed_input):
-        #             detected_emotions.add(emotion)
-
-        # return detected_emotions
-
-        # LLM MODE
-        #system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
-        #The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
-        #If emotions are detected, return only the emotions that are clearly indicated by the text in a comma-separated list without any explanations. 
-        #If no clear emotion is present, return an empty set.
-        #"""
 
         system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
         The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
