@@ -789,14 +789,20 @@ class Chatbot:
         If multiple emotions are present, return all relevant emotions as a comma-separated list.
         If no clear emotion is present, return an empty list.
 
-        For example:
-        - "I am frustrated" indicates Anger.
-        - "That was shocking!" indicates Surprise.
-        - "I feel so happy!" indicates Happiness.
-        - "I'm scared and surprised!" indicates both Fear and Surprise.
-        - 'I am quite frustrated by these awful recommendations!!!' indicates Anger only, not Anger and Disgust.
-        - 'Woah!!  That movie was so shockingly bad!  You had better stop making awful recommendations they're pissing me off' indicate Anger and Surprise only, not Anger, Surprise, and Sadness.
-        Do not include unrelated emotions or keywords. For instance, if the text indicates frustration, only return Anger, not Disgust or any other emotion.
+        Ensure that you return the minimal number of emotions necessary based on the context of the input. For instance, if the text indicates frustration, only return Anger, not any other emotions.
+
+        Examples:
+        - Input: "What's the weather?" 
+        Expected Output: (empty set)
+
+        - Input: 'Wait what?  You recommended "Titanic (1997)"???'
+        Expected Output: Surpise
+
+        - Input: "I am quite frustrated by these awful recommendations!!!"
+        Expected Output: Anger, Disgust
+
+        - Input: "Woah!! That movie was so shockingly bad! You had better stop making awful recommendations they're pissing me off." 
+        Expected Output: Anger, Surprise
         """
 
         message = f"Detect emotions in the following text: \"{preprocessed_input}\""
