@@ -286,34 +286,31 @@ class Chatbot:
         :param title: a string containing a movie title
         :returns: a list of indices of matching movies
         """
-        # Clean the input title
         title = title.strip().lower()
         
-        # Extract year if present
+        #take out year
         year_match = re.search(r'\((\d{4})\)', title)
         year = year_match.group(1) if year_match else None
         title_clean = re.sub(r'\(\d{4}\)', '', title).strip()
         
-        # First check if this is a foreign language title
+        # check foreign title translation
         if self.is_foreign_language_llm(title_clean):
-            translated_title = self.translate_title_to_english(title_clean)
-            
+            translated_title = self.translate_title_to_english(title_clean) # translating
             if translated_title and translated_title.lower() != title_clean.lower():
                 title_clean = translated_title.lower()
         
-        # Create title variations to handle articles
+        # weird articles / fuzzy matches
         title_parts = title_clean.split()
         english_articles = ['a', 'an', 'the']
         variations = [title_clean]
         
-        # Create variations with rearranged articles
         if len(title_parts) > 1 and title_parts[0].lower() in english_articles:
             variations.extend([
                 f"{' '.join(title_parts[1:])}, {title_parts[0]}",
                 f"{' '.join(title_parts[1:])} {title_parts[0]}"
             ])
         
-        # Search for matches
+        # MATCH TO INDEX
         matches = []
         for idx, movie_entry in enumerate(self.titles):
             movie_title = movie_entry[0].lower()
@@ -360,13 +357,11 @@ class Chatbot:
         
         try:
             response = util.simple_llm_call(system_prompt, message, max_tokens=50)
-            response = response.strip().upper()  # Normalize response
-
+            response = response.strip().upper()  # normalize response
             return response == "YES"
-
         except Exception as e:
             print(f"LLM language detection error: {e}")
-            return False  # Default to False if the LLM fails
+            return False  # false if the LLM fails
 
     def translate_title_to_english(self, title):
         """
@@ -375,8 +370,6 @@ class Chatbot:
         :param title: A movie title extracted from user input, possibly in a foreign language.
         :returns: The translated English title if found, otherwise the original title.
         """
-        
-        # System prompt to ensure accurate LLM behavior
         system_prompt = """You are a professional movie title translator.
         Your job is to translate movie titles from German, Spanish, French, Danish, or Italian to their exact English equivalents.
 
@@ -401,16 +394,14 @@ class Chatbot:
         try:
             translated_title = util.simple_llm_call(system_prompt, message, max_tokens=50)
             
-            # Cleanup the response
+            # Cclean response
             translated_title = translated_title.strip().strip('"')
-            translated_title = translated_title.split("\n")[0].strip()  # Remove unnecessary explanations
+            translated_title = translated_title.split("\n")[0].strip() #just the translation
 
-            # Ensure translation is valid
             if not translated_title or translated_title.lower() == "unknown":
-                return foreign_title  # Return original if translation fails
-
-            return translated_title  # Valid translated title
-
+                return title
+            return translated_title
+        
         except Exception as e:
             print(f"Translation error: {e}")
             return title  # If LLM fails, return the original title
@@ -438,41 +429,40 @@ class Chatbot:
                 word, sentiment = line.strip().split(',')
                 sentiment_dict[word] = 1 if sentiment == 'pos' else -1
         
-       # Remove words inside quotation marks (movie titles)
+       # remove words inside quotation marks (movie titles)
         preprocessed_input = re.sub(r'"[^"]*"', '', preprocessed_input)
 
         words = preprocessed_input.split()
         
         positive_count = 0
         negative_count = 0
-        negation = False  # Track if negation is active
+        negation = False  # track if negation is active
 
         negation_words = {"not", "never", "no", "didn't", "doesn't", "wasn't", "couldn't", "isn't", "don't", "can't", "won't"}
 
         for word in words:
             if word in negation_words:
-                negation = True  # Activate negation for the next word(s)
+                negation = True 
                 continue
 
             if word == "enjoyed":
-                word = "enjoy"  # Hardcoded exception
+                word = "enjoy"  # hardcoded exception for sanity check
             elif word.endswith("ed") and len(word) > 3:
                 word = word[:-2] + "e"
 
             if word in sentiment_dict:
                 sentiment_value = sentiment_dict[word]
 
-                # Apply negation
                 if negation:
                     sentiment_value *= -1  # Flip sentiment
-                    negation = False  # Reset negation after applying it
+                    negation = False  # reset negation after applying it
 
                 if sentiment_value > 0:
                     positive_count += sentiment_value
                 else:
                     negative_count += abs(sentiment_value)
 
-        # Determine overall sentiment
+        # dtermine sentiment
         if positive_count == 0 and negative_count == 0:
             return 0
         elif positive_count > negative_count:
