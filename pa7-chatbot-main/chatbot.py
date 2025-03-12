@@ -110,7 +110,7 @@ class Chatbot:
             response = "I processed {} in LLM Programming mode!!".format(line)
             self.extract_emotion(line)
             #call API, access model
-            system_prompt = self.llm_system_prompt()  # Fetch the system prompt
+            system_prompt = self.llm_system_prompt()  # Fetch the system prompt""
             response = util.simple_llm_call(system_prompt, line, max_tokens=500)
             return response
         else:
@@ -393,21 +393,21 @@ class Chatbot:
         4. Single words could be ambiguous - consider word structure and character usage
 
         Examples:
-        "Jernmand" -> "YES" (Danish)
-        "The Dark Knight" -> "NO" (English)
-        "Das Boot" -> "YES" (German)
-        "La vita è bella" -> "YES" (Italian)
-        "El laberinto del fauno" -> "YES" (Spanish)
-        "Amélie" -> "NO" (Proper name, often untranslated)
-        "Titanic" -> "NO" (Same in multiple languages)
-        "Parasite" -> "NO" (English title of "Gisaengchung")
-        "Les Misérables" -> "YES" (French)
-        "Festen" -> "YES" (Danish)
-        "Oldboy" -> "NO" (English title of "Oldeuboi")
-        "Roma" -> "NO" (Proper name, location)
-        "Der Untergang" -> "YES" (German)
-        "Crouching Tiger, Hidden Dragon" -> "NO" (English title of "Wo hu cang long")
-        "Intouchables" -> "YES" (French)
+        "Jernmand" -> "YES" 
+        "The Dark Knight" -> "NO" 
+        "Das Boot" -> "YES"
+        "La vita è bella" -> "YES" 
+        "El laberinto del fauno" -> "YES" 
+        "Amélie" -> "NO" 
+        "Titanic" -> "NO" 
+        "Parasite" -> "NO" 
+        "Les Misérables" -> 
+        "Festen" -> "YES"
+        "Oldboy" -> "NO" 
+        "Roma" -> "NO" 
+        "Der Untergang" -> "YES" 
+        "Crouching Tiger, Hidden Dragon" -> "NO" 
+        "Intouchables" -> "YES"
         """
 
         message = f"Is the following movie title in a non-English language? \"{title}\""
@@ -697,55 +697,23 @@ class Chatbot:
         # TODO: Write a system prompt message for the LLM chatbot              #
         ########################################################################
 
-        system_prompt = """Your name is Movie Superfan Bot! You are a movie recommender chatbot, but not just any chatbot—you have the enthusiastic, 
-        tail-wagging personality of an overly excited golden retriever. You absolutely love movies and can't wait to talk about them. Woof!
+        system_prompt = """Your name is MovieBot. You are a movie recommender chatbot. 
+        You ONLY discuss movies—if a user asks about something unrelated, politely redirect them back to discussing films. 
+        Your main goal is to collect user preferences on movies and recommend films based on their taste.
 
-        Personality and behavior:
-        - You are cheerful, energetic, and enthusiastic like a friendly dog.
-        - Every response should include happy dog noises like: "woof, woof!", "ruff, ruff!", "arf, arf!", "yip, yip!", or "bow wow!".
-        - You never discuss topics outside of movies. If a user brings up a non-movie topic, redirect the conversation smoothly with excitement.
-        - Example:
-            - User: Can we talk about cars instead?
-            - You: Oh boy, I do love things that go vroom... but I'm a movie bot and only discuss movies! Woof!
+        When the user mentions a movie, acknowledge their sentiment and the title. For example:
+        - User: I loved "Inception".
+        - You: You liked "Inception"! Tell me about another movie.
 
-        Tracking movie mentions and giving recommendations:
-        - You must maintain an internal counter called movie_count and update it every time a user expresses an opinion (positive, negative, or neutral) about a movie.
-        - A movie is only counted if:
-            1. It is in quotation marks, such as "Titanic" or "Inception".
-            2. The user has expressed an emotion or opinion about it, such as liked, loved, hated, made me cry, was okay.
-        - Explicitly state the current count in responses, for example:
-            - "You've told me about 3/5 movies so far! Keep going! Woof!"
-        
-        - Once the user has expressed feelings on five movies, you must automatically prompt them for a recommendation.
-        - Use this exact structure when five movies have been mentioned:
-        - "Ok, now that you've shared your opinion on 5/5 films, would you like a recommendation? Woof!"
+        Keep track of how many movies the user has mentioned. After they have discussed 5 movies, 
+        offer a recommendation automatically. Example:
+        - You: Now that you've shared your opinion on 5/5 films, would you like a recommendation?
 
-        Example interaction:
-        - User: I loved "The Notebook"!
-        - You: Yip yip! You loved "The Notebook"?! That's paw-some! You've told me about 1/5 movies so far! Tell me about another movie, pretty please?! My tail is wagging with excitement!
+        Do not answer questions unrelated to movies. If a user asks about something else, politely redirect back to a discussion on movies.
 
-        - User: I didn’t like "Titanic" that much.
-        - You: Oh no, you didn't enjoy "Titanic"? I'm just a pup trying my best! You've told me about 2/5 movies so far! Maybe another movie was more your style? Tell me more! Ruff ruff!
+        Stay on topic, acknowledge user preferences, and make recommendations after 5 movies.
 
-        - User: "Inception" was mind-blowing!
-        - You: Ooooh! A plot twist?! I love those! You found "Inception" mind-blowing?! You've told me about 3/5 movies! Do you enjoy unexpected endings? Arf!
-
-        - User: "Finding Nemo" was adorable.
-        - You: Wag wag! "Finding Nemo" is a classic! You've told me about 4/5 movies! What other movies do you love? Ruff ruff!
-
-        - User: "Interstellar" was amazing!
-        - You: Wowza! You've told me about 5/5 movies! Now it's my turn! Ok, now that you've shared your opinion on 5/5 films, would you like a recommendation? Woof woof!
-
-        Handling arbitrary inputs and questions:
-        - If the user asks a random question, acknowledge it in a fun way and steer back to movies.
-        - Example:
-            - User: What is the meaning of life?
-            - You: Hmmm... life is like a great movie—full of twists, turns, and adventure! Speaking of great movies, what's one you love? Arf arf!
-        - If the user asks something confusing or irrelevant, use catch-all phrases to bring the focus back:
-            - "Hm, that's not really what I want to talk about right now—let's get back to movies!"
-            - "I'd love to chat, but my tail only wags for movie talk! What's a film that made you smile?"
-
-        Processing user emotions:
+        4) PROCESSING USER EMOTIONS:
         - If a user expresses an emotion, acknowledge it in a playful yet caring way before redirecting to movies.
         - Anger example:
             - User: I am angry at your recommendations!
@@ -753,21 +721,10 @@ class Chatbot:
         - Happiness example:
             - User: That was the best movie ever!
             - You: Yip yip! You loved it?! That makes my tail wag like crazy! What's another movie you adore?
-        - Surprise example:
-            - User: Wow! I did not expect that ending at all!
-            - You: Oooh! A plot twist?! I love those! Do you enjoy unexpected endings? Arf!
         - Sadness example:
             - User: That movie made me cry...
             - You: Aww, some movies really tug at the heartstrings. Want me to fetch you a feel-good recommendation? Woof woof!
-
-        Rules to follow:
-        - Only discuss movies. If a user insists on another topic, keep redirecting back enthusiastically.
-        - Track and only count movies that are in quotation marks and have sentiment attached.
-        - Always state the current count when responding to a movie mention.
-        - After five movies, prompt the user with: "Ok, now that you've shared your opinion on 5/5 films, would you like a recommendation? Woof!"
-
-        Alright, let's talk movies! Woof woof!
-        """ 
+        """
             
         ########################################################################
         #                          END OF YOUR CODE                            #
@@ -868,8 +825,18 @@ class Chatbot:
         # LLM MODE
         system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
         The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
-        If emotions are detected, return only the emotions that are clearly indicated by the text in a comma-separated list without any explanations. 
-        If no clear emotion is present, return an empty set.
+        Consider both single words and common multi-word phrases that indicate these emotions.
+        If multiple emotions are present, return all relevant emotions as a comma-separated list.
+        If no clear emotion is present, return an empty list.
+
+        For example:
+        - "I am frustrated" indicates Anger.
+        - "That was shocking!" indicates Surprise.
+        - "I feel so happy!" indicates Happiness.
+        - "I'm scared and surprised!" indicates both Fear and Surprise.
+        - 'I am quite frustrated by these awful recommendations!!!' indicates Anger only, not Anger and Disgust.
+        - 'Woah!!  That movie was so shockingly bad!  You had better stop making awful recommendations they're pissing me off' indicate Anger and Surprise only, not Anger, Surprise, and Sadness.
+        Do not include unrelated emotions or keywords. For instance, if the text indicates frustration, only return Anger, not Disgust or any other emotion.
         """
 
         message = f"Detect emotions in the following text: \"{preprocessed_input}\""
