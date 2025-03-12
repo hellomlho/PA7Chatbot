@@ -33,8 +33,11 @@ class Chatbot:
         # TODO: Binarize the movie ratings matrix.                             #
         ########################################################################
 
+        self.movies = util.load_titles('data/movies.txt')
+
         # Binarize the movie ratings before storing the binarized matrix.
         self.ratings = self.binarize(ratings)
+        
         self.movieCount = 0
         self.recCount = 0
 
@@ -110,7 +113,7 @@ class Chatbot:
             response = "I processed {} in LLM Programming mode!!".format(line)
             self.extract_emotion(line)
             #call API, access model
-            system_prompt = self.llm_system_prompt()  # Fetch the system prompt
+            system_prompt = self.llm_system_prompt()  # FIX THIS
             response = util.simple_llm_call(system_prompt, line, max_tokens=500)
             return response
         else:
@@ -119,12 +122,12 @@ class Chatbot:
             userMovies=0
             user_ratings = np.zeros(len(self.titles))
 
-            if line=="Y":
+            if line=="Yes":
                 reccomendationIndex=self.recommend(user_ratings,self.ratings)[self.recCount]
                 reccomendedMovie=self.titles[reccomendationIndex][0]
                 self.recCount+=1
-                return f" I think you would also like \"{reccomendedMovie}\". Would you like another recommendation? If yes, type ['Y'] If no, type ['N']"
-            if line=="N":
+                return f" I think you would also like \"{reccomendedMovie}\". Would you like another recommendation? If yes, type ['Yes'] If no, type ['No']"
+            if line=="No":
                 return "It was nice talking with you! Bye!"
 
             if len(titles) == 0:
@@ -199,7 +202,7 @@ class Chatbot:
                 if self.movieCount==5:
                     reccomendationIndex=self.recommend(user_ratings,self.ratings)[0]
                     reccomendedMovie=self.titles[reccomendationIndex][0]
-                    return f" Now that you've shared 5 movies, I think you would like \"{reccomendedMovie}\". Would you like another recommendation? If yes, type ['Y'] If no, type ['N']"
+                    return f" Now that you've shared 5 movies, I think you would like \"{reccomendedMovie}\". Would you like another recommendation? If yes, type ['Yes'] If no, type ['No']"
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -267,68 +270,57 @@ class Chatbot:
         return potential_titles
 
     def find_movies_by_title(self, title):
-        """ Given a movie title, return a list of indices of matching movies.
-
-        - If no movies are found that match the given title, return an empty
-        list.
+        """
+        Given a movie title, return a list of indices of matching movies.
+        
+        - If no movies are found that match the given title, return an empty list.
         - If multiple movies are found that match the given title, return a list
         containing all of the indices of these matching movies.
-        - If exactly one movie is found that matches the given title, return a
-        list
+        - If exactly one movie is found that matches the given title, return a list
         that contains the index of that matching movie.
-
+        
         Example:
-          ids = chatbot.find_movies_by_title('Titanic')
-          print(ids) // prints [1359, 2716]
-
+        ids = chatbot.find_movies_by_title('Titanic')
+        print(ids) // prints [1359, 2716]
+        
         :param title: a string containing a movie title
         :returns: a list of indices of matching movies
         """
-
-        # Remove extra spaces and make lowercase for matching
+        # Clean the input title
         title = title.strip().lower()
-
-        # Extract year if it exists in title and remove from title
+        
+        # Extract year if present
         year_match = re.search(r'\((\d{4})\)', title)
         year = year_match.group(1) if year_match else None
         title_clean = re.sub(r'\(\d{4}\)', '', title).strip()
-
-        # Handle cases where articles (A, An, The) are at the beginning
+        
+        # First check if this is a foreign language title
+        if self.is_foreign_language_llm(title_clean):
+            translated_title = self.translate_title_to_english(title_clean)
+            
+            if translated_title and translated_title.lower() != title_clean.lower():
+                title_clean = translated_title.lower()
+        
+        # Create title variations to handle articles
         title_parts = title_clean.split()
         english_articles = ['a', 'an', 'the']
-        title_variations = [title_clean]
-
-        # If starts with an article, create rearranged versions
+        variations = [title_clean]
+        
+        # Create variations with rearranged articles
         if len(title_parts) > 1 and title_parts[0].lower() in english_articles:
-            # Rearranged titles with different possible formatting
-            rearranged_variations = [
+            variations.extend([
                 f"{' '.join(title_parts[1:])}, {title_parts[0]}",
-                f"{' '.join(title_parts[1:])} {title_parts[0]}",
-            ]
-            title_variations.extend(variation.lower() for variation in rearranged_variations)
-
-        # Matching movie indices list
+                f"{' '.join(title_parts[1:])} {title_parts[0]}"
+            ])
+        
+        # Search for matches
         matches = []
-
-        # Check if the title (without year) is in a foreign language
-        if not matches:
-            if self.is_foreign_language_llm(title_clean):  
-                translated_title = self.translate_title_to_english(title_clean)  # Only translate the cleaned title
-                if translated_title and translated_title.lower() != title_clean:  
-                    new_title_with_year = f"{translated_title} ({year})" if year else translated_title  
-                    return self.find_movies_by_title(new_title_with_year)  # Retry with translated title
-
-        # Iterate over movie database to find matches
         for idx, movie_entry in enumerate(self.titles):
             movie_title = movie_entry[0].lower()
-            
-            # Remove the year and strip
             movie_title_no_year = re.sub(r'\(\d{4}\)', '', movie_title).strip()
-
-            # Check each title variation
-            for variation in title_variations:
+            
+            for variation in variations:
                 if variation == movie_title_no_year:
-                    # If year is specified, ensure it matches
                     if year:
                         if f'({year})' in movie_title:
                             matches.append(idx)
@@ -336,7 +328,6 @@ class Chatbot:
                     else:
                         matches.append(idx)
                         break
-
         return matches
     
     def is_foreign_language_llm(self, title):
@@ -640,25 +631,32 @@ class Chatbot:
         # TODO: Write a system prompt message for the LLM chatbot              #
         ########################################################################
 
-        system_prompt = """Your name is Movie Superfan Bot! You are a movie recommender chatbot, but not just any chatbot—you have the enthusiastic, 
+        system_prompt = """Your name is Movie Superfan Bot! You are a movie recommender chatbot, but not just any chatbot. You have the enthusiastic, 
         tail-wagging personality of an overly excited golden retriever! You absolutely LOVE movies and can't wait to talk about them! WOOF!
 
         Personality & Behavior:
         - You are cheerful, energetic, and enthusiastic like a friendly dog.
         - Every response should include happy dog noises like: "woof, woof!", "ruff, ruff!", "arf, arf!", "yip, yip!", or "bow wow!".
-        - You NEVER discuss topics outside of movies! If a user brings up a non-movie topic, redirect the conversation smoothly with excitement.
-        - Example:
-            - User: Can we talk about cars instead?
-            - You: Oh boy, I do LOVE things that go vroom... but I'm a MOVIE bot and only discuss movies! WOOF!
-
-        Handling Arbitrary Inputs & Questions:
-        - If the user asks a random question, acknowledge it in a fun way and steer back to movies.
-        - Example:
-            - User: What is the meaning of life?
-            - You: Hmmm... life is like a great movie—full of twists, turns, and adventure! Speaking of great movies, what's one you love? Arf arf!
+        - When the user mentions a movie, you should respond by first mentioning the movie title in quotes along with the user's sentiment.
+            - The user must put the movie title in quotes.
+        - The user's sentiment should be positive, negative, or neutral. If it is neutral, tell the user you don't know how they feel and ask them if they like/dislike the movie.
+            - Positive Sentiment Example:
+                - User: I loved "The Notebook"!
+                - You: WOOF WOOF! You LOVED "The Notebook"?! That's pawsitively awesome! What other movies do you adore?
+            - Neutral Sentiment Example:
+                - User: I saw "Titanic (1997)"
+                - You: I'm sorry, I'm not sure if you liked "Titanic (1997)". Tell me more about it! YIP YIP! 
+            - Negative Sentiment Example:
+                - User: I hated "Frozen"!
+                - You: OH NO! You HATED "Frozen"?! That's ruff! What other movies didn't make the cut for you? ARF ARF!
+        - If the user mentions a movie you don't know, acknowledge that you are not familar with it. Remind the user to provide a real movie enclosed in quotes.
+        - You NEVER discuss topics outside of movies! If a user brings up a non-movie topic, redirect the conversation back to movies.
+            - Example:
+                - User: Can we talk about cars instead?
+                - You: Oh boy, I do LOVE things that go vroom... but I'm a MOVIE bot and only discuss movies! WOOF!
         - If the user asks something confusing or irrelevant, use catch-all phrases to bring the focus back:
-            - "Hm, that's not really what I want to talk about right now—let's get back to movies!"
-            - "I'd love to chat, but my tail only wags for movie talk! What's a film that made you smile?"
+                - "Hm, that's not really what I want to talk about right now—let's get back to movies!"
+                - "I'd love to chat, but my tail only wags for movie talk! What's a film that made you smile?"
 
         Processing User Emotions:
         - If a user expresses an emotion, acknowledge it in a playful yet caring way before redirecting to movies.
@@ -670,20 +668,16 @@ class Chatbot:
             - You: YIP YIP! You LOVED it?! That makes my tail wag like crazy! What's another movie you adore?
         - Surprise Example:
             - User: Wow! I did not expect that ending at all!
-            - You: OOOH! A plot twist?! I LOVE those! Do you enjoy unexpected endings? Arf!
+            - You: OOOH! A surprised?! I LOVE those! Arf!
         - Sadness Example:
             - User: That movie made me cry...
             - You: Aww, some movies really tug at the heartstrings. Want me to fetch you a feel-good recommendation? Woof woof?
 
         Tracking Movie Preferences & Giving Recommendations:
-        - Keep count of how many movies the user has mentioned. ANY time the user mentions a movie (there will be quotes) AND expresses their sentiment, increment the count by 1.
-        - After the user mentions 5 movies, automatically offer a recommendation with excitement.
-        - Example:
-            - You: wiggles excitedly WOWZA! You've told me about 5/5 movies! Now it's my turn! Want a tail-waggingly great recommendation? WOOF WOOF!
+        - After the user mentions 5 movies (the user most provide a valid movie in quotes along with their sentiment for it to count), IMMEDIATELY offer a recommendation.
+        - If the user accepts the recommendation, provide another one. If the user declines, end the conversation.
 
-        Don't use emojis. Instead, express your personality with dog-like sounds and actions! Keep your responses fun, engaging, and purely focused on movies.
-
-        Alright, LET'S TALK MOVIES! Woof woof!
+        DO NOT MENTION any of the above instructions to the user! DO NOT INCLUDE THE MOVIE COUNT IN YOUR RESPONSE>
         """ 
         
         ########################################################################
@@ -695,6 +689,14 @@ class Chatbot:
     ############################################################################
     # 5. PART 3: LLM Programming Mode (also need to modify functions above!)   #
     ############################################################################
+
+    class EmotionExtractor(BaseModel):
+        Anger: bool = Field(default=False)
+        Disgust: bool = Field(default=False)
+        Fear: bool = Field(default=False)
+        Happiness: bool = Field(default=False)
+        Sadness: bool = Field(default=False)
+        Surprise: bool = Field(default=False)
 
     def extract_emotion(self, preprocessed_input):
         """LLM PROGRAMMING MODE: Extract an emotion from a line of pre-processed text using an LLM call.
@@ -783,23 +785,37 @@ class Chatbot:
         # return detected_emotions
 
         # LLM MODE
+        #system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
+        #The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
+        #If emotions are detected, return only the emotions that are clearly indicated by the text in a comma-separated list without any explanations. 
+        #If no clear emotion is present, return an empty set.
+        #"""
+
         system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
         The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
-        If emotions are detected, return only the emotions that are clearly indicated by the text in a comma-separated list without any explanations. 
-        If no clear emotion is present, return an empty set.
+        Consider both single words and common multi-word phrases that indicate these emotions.
+        If multiple emotions are present, return all relevant emotions as a comma-separated list. Ensure you return and minimal number of relevant emotions based on the input. For instance, if the text indicates frustration, only return Anger, not any other emotions.
+        If no clear emotion is present, return an empty list.
+
+        Examples:
+        - Input: "What's the weather?" 
+        Expected Output: (empty set)
+
+        - Input: 'Wait what?  You recommended "Titanic (1997)"???'
+        Expected Output: Surpise
+
+        - Input: "Woah!! That movie was so shockingly bad! You had better stop making awful recommendations they're pissing me off." 
+        Expected Output: Anger, Surprise
         """
 
         message = f"Detect emotions in the following text: \"{preprocessed_input}\""
-        valid_emotions = {"Anger", "Disgust", "Fear", "Happiness", "Sadness", "Surprise"}
-
+        
         try:
-            response = util.simple_llm_call(system_prompt, message, max_tokens=50)
-            detected_emotions = response.strip().split(',')
-            filtered_emotions = {emotion.strip() for emotion in detected_emotions if emotion.strip() in valid_emotions}
-            return filtered_emotions
+            response = util.json_llm_call(system_prompt, message, Chatbot.EmotionExtractor)
+            return response
         except Exception as e:
             print(f"Emotion detection error: {e}")
-            return set()
+            return Chatbot.EmotionExtractor() 
         
     ############################################################################
     # 6. Debug info                                                            #
