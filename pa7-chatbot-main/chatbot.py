@@ -826,6 +826,7 @@ class Chatbot:
         system_prompt = """You are an emotion detection bot. Your task is to identify emotions in a given text.
         The possible emotions are: Anger, Disgust, Fear, Happiness, Sadness, and Surprise.
         Consider both single words and common multi-word phrases that indicate these emotions.
+<<<<<<< HEAD
         If multiple emotions are present, return all relevant emotions as a comma-separated list.
         If no clear emotion is present, return an empty list.
 
@@ -837,6 +838,24 @@ class Chatbot:
         - 'I am quite frustrated by these awful recommendations!!!' indicates Anger only, not Anger and Disgust.
         - 'Woah!!  That movie was so shockingly bad!  You had better stop making awful recommendations they're pissing me off' indicate Anger and Surprise only, not Anger, Surprise, and Sadness.
         Do not include unrelated emotions or keywords. For instance, if the text indicates frustration, only return Anger, not Disgust or any other emotion.
+=======
+        If multiple emotions are present, return all relevant emotions as a comma-separated list. Ensure you return the minimal number of emotions necessary based on the context of the input. For instance, if the text indicates frustration, only return Anger, not any other emotions.
+        If no clear emotion is present, return an empty list.
+
+        Examples:
+        - Input: "What's the weather?" 
+        Expected Output: (empty set)
+
+        - Input: 'Wait what?  You recommended "Titanic (1997)"???'
+        Expected Output: Surpise
+
+        - Input: "I am quite frustrated by these awful recommendations!!!"
+        Expected Output: Anger, Disgust
+
+        - Input: "Woah!! That movie was so shockingly bad! You had better stop making awful recommendations they're pissing me off." 
+        Expected Output: Anger, Surprise
+        
+>>>>>>> 4d1f405a3c7f07b0cd784eeb8437f663a20211b0
         """
 
         message = f"Detect emotions in the following text: \"{preprocessed_input}\""
