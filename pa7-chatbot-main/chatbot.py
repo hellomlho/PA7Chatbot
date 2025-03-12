@@ -119,12 +119,12 @@ class Chatbot:
             userMovies=0
             user_ratings = np.zeros(len(self.titles))
 
-            if line=="Y":
+            if line=="Yes":
                 reccomendationIndex=self.recommend(user_ratings,self.ratings)[self.recCount]
                 reccomendedMovie=self.titles[reccomendationIndex][0]
                 self.recCount+=1
-                return f" I think you would also like \"{reccomendedMovie}\". Would you like another recommendation? If yes, type ['Y'] If no, type ['N']"
-            if line=="N":
+                return f" I think you would also like \"{reccomendedMovie}\". Would you like another recommendation? If yes, type ['Yes'] If no, type ['No']"
+            if line=="No":
                 return "It was nice talking with you! Bye!"
 
             if len(titles) == 0:
@@ -199,7 +199,7 @@ class Chatbot:
                 if self.movieCount==5:
                     reccomendationIndex=self.recommend(user_ratings,self.ratings)[0]
                     reccomendedMovie=self.titles[reccomendationIndex][0]
-                    return f" Now that you've shared 5 movies, I think you would like \"{reccomendedMovie}\". Would you like another recommendation? If yes, type ['Y'] If no, type ['N']"
+                    return f" Now that you've shared 5 movies, I think you would like \"{reccomendedMovie}\". Would you like another recommendation? If yes, type ['Yes'] If no, type ['No']"
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -269,17 +269,15 @@ class Chatbot:
     def find_movies_by_title(self, title):
         """ Given a movie title, return a list of indices of matching movies.
 
-        - If no movies are found that match the given title, return an empty
-        list.
+        - If no movies are found that match the given title, return an empty list.
         - If multiple movies are found that match the given title, return a list
         containing all of the indices of these matching movies.
-        - If exactly one movie is found that matches the given title, return a
-        list
+        - If exactly one movie is found that matches the given title, return a list
         that contains the index of that matching movie.
 
         Example:
-          ids = chatbot.find_movies_by_title('Titanic')
-          print(ids) // prints [1359, 2716]
+        ids = chatbot.find_movies_by_title('Titanic')
+        print(ids) // prints [1359, 2716]
 
         :param title: a string containing a movie title
         :returns: a list of indices of matching movies
@@ -307,17 +305,50 @@ class Chatbot:
             ]
             title_variations.extend(variation.lower() for variation in rearranged_variations)
 
-        # Matching movie indices list
-        matches = []
-
-        # Check if the title (without year) is in a foreign language
+        # Initial search with original and article-rearranged titles
+        matches = self._find_exact_matches(title_variations, year)
+        
+        # If no matches found, try foreign language detection
         if not matches:
-            if self.is_foreign_language_llm(title_clean):  
-                translated_title = self.translate_title_to_english(title_clean)  # Only translate the cleaned title
-                if translated_title and translated_title.lower() != title_clean:  
-                    new_title_with_year = f"{translated_title} ({year})" if year else translated_title  
-                    return self.find_movies_by_title(new_title_with_year)  # Retry with translated title
+            # Check if the title is potentially foreign
+            is_foreign = self.is_foreign_language_llm(title_clean)
+            
+            if is_foreign:
+                translated_title = self.translate_title_to_english(title_clean)
+                
+                # Only process if translation returned something different
+                if translated_title and translated_title.lower() != title_clean.lower():
+                    print(f"Foreign title detected: '{title_clean}' → '{translated_title}'")
+                    
+                    # Process the translated title with the same article handling
+                    translated_parts = translated_title.lower().split()
+                    translated_variations = [translated_title.lower()]
+                    
+                    # Handle articles in the translated title
+                    if len(translated_parts) > 1 and translated_parts[0].lower() in english_articles:
+                        rearranged_translations = [
+                            f"{' '.join(translated_parts[1:])}, {translated_parts[0]}",
+                            f"{' '.join(translated_parts[1:])} {translated_parts[0]}",
+                        ]
+                        translated_variations.extend(variation.lower() for variation in rearranged_translations)
+                    
+                    # Search with the translated variations
+                    translated_matches = self._find_exact_matches(translated_variations, year)
+                    
+                    if translated_matches:
+                        return translated_matches
+        
+        return matches
 
+    def _find_exact_matches(self, title_variations, year=None):
+        """Helper method to find exact matches based on title variations.
+        
+        :param title_variations: list of title variations to search for
+        :param year: optional year to filter results
+        :returns: list of matching movie indices
+        """
+        matches = []
+        
         # Iterate over movie database to find matches
         for idx, movie_entry in enumerate(self.titles):
             movie_title = movie_entry[0].lower()
@@ -336,7 +367,7 @@ class Chatbot:
                     else:
                         matches.append(idx)
                         break
-
+        
         return matches
     
     def is_foreign_language_llm(self, title):
@@ -346,29 +377,43 @@ class Chatbot:
         :param title: A movie title (already preprocessed to lowercase, no year)
         :returns: True if the title is foreign and should be translated, False if it's already in English
         """
-        system_prompt = """You are a strict language detection bot.
-        Your task is to determine if a given movie title is written in one of these languages: 
-        German, Spanish, French, Danish, or Italian.
+        system_prompt = """You are a language detection system for movie titles.
+        Determine if the input is likely a movie title in German, Spanish, French, Italian, Danish, Swedish, Norwegian, 
+        Finnish, Dutch, Portuguese, Russian, Japanese, Chinese, Korean, or another non-English language.
 
-        - If the movie title is in one of those languages, respond with EXACTLY "YES".
-        - If the title is already in English, respond with EXACTLY "NO".
-        - Your response MUST be ONLY "YES" or "NO" with no additional words.
-        - Do NOT add explanations, extra punctuation, or additional text.
+        Rules:
+        - If the movie title appears to be in a non-English language, respond with EXACTLY "YES".
+        - If the title is in English or is a proper name that wouldn't be translated, respond with EXACTLY "NO".
+        - Your response MUST be ONLY "YES" or "NO" with no additional text.
+        
+        Consider these cases carefully:
+        1. Many titles use proper names or words that look similar across languages
+        2. Some words are loan words that appear in multiple languages
+        3. Some titles are intentionally left untranslated in international releases
+        4. Single words could be ambiguous - consider word structure and character usage
 
-        Example Inputs and Outputs:
-        - Input: "Jernmand" -> Output: "YES"
-        - Input: "The Dark Knight" -> Output: "NO"
-        - Input: "Das Boot" -> Output: "YES"
-        - Input: "Junglebogen" -> Output: "YES"
-        - Input: "Titanic" -> Output: "NO"
-
-        IMPORTANT: Your response MUST be only "YES" or "NO". Do not include any explanations.
+        Examples:
+        "Jernmand" -> "YES" (Danish)
+        "The Dark Knight" -> "NO" (English)
+        "Das Boot" -> "YES" (German)
+        "La vita è bella" -> "YES" (Italian)
+        "El laberinto del fauno" -> "YES" (Spanish)
+        "Amélie" -> "NO" (Proper name, often untranslated)
+        "Titanic" -> "NO" (Same in multiple languages)
+        "Parasite" -> "NO" (English title of "Gisaengchung")
+        "Les Misérables" -> "YES" (French)
+        "Festen" -> "YES" (Danish)
+        "Oldboy" -> "NO" (English title of "Oldeuboi")
+        "Roma" -> "NO" (Proper name, location)
+        "Der Untergang" -> "YES" (German)
+        "Crouching Tiger, Hidden Dragon" -> "NO" (English title of "Wo hu cang long")
+        "Intouchables" -> "YES" (French)
         """
 
-        message = f"Is the following movie title foreign? \"{title}\""
+        message = f"Is the following movie title in a non-English language? \"{title}\""
         
         try:
-            response = util.simple_llm_call(system_prompt, message, max_tokens=50)
+            response = util.simple_llm_call(system_prompt, message, max_tokens=10)
             response = response.strip().upper()  # Normalize response
 
             return response == "YES"
@@ -379,50 +424,62 @@ class Chatbot:
 
     def translate_title_to_english(self, title):
         """
-        Translates a foreign movie title (German, Spanish, French, Danish, or Italian) into English using the LLM.
+        Translates a foreign movie title into English using the LLM.
 
         :param title: A movie title extracted from user input, possibly in a foreign language.
         :returns: The translated English title if found, otherwise the original title.
         """
         
-        # System prompt to ensure accurate LLM behavior
-        system_prompt = """You are a professional movie title translator.
-        Your job is to translate movie titles from German, Spanish, French, Danish, or Italian to their exact English equivalents.
+        system_prompt = """You are a movie database specialist focused on translating foreign film titles.
 
-        Important Rules:
-        - If the title is already in English, return it exactly as is.
-        - If no official English title exists, return UNKNOWN.
-        - DO NOT add explanations, descriptions, or any extra text—ONLY return the translated title.
-        - Keep punctuation and capitalization exactly like in English movie titles.
-
-        Examples:
-        - "El Laberinto del Fauno" → "Pan's Labyrinth"
-        - "La Vita è Bella" → "Life Is Beautiful"
-        - "Das Boot" → "The Boat"
-        - "Le Fabuleux Destin d'Amélie Poulain" → "Amelie"
-        - "Der König der Löwen" → "The Lion King"
-        - "Doble Felicidad" → "Double Happiness"
-        - "Jernmand" → "Iron Man"
+        Your job:
+        - Identify the language of the input movie title
+        - Provide the official English release title for the movie
+        - DO NOT invent translations - use the actual English release title
+        
+        Response format:
+        - Respond ONLY with the official English title
+        - No explanations or additional text
+        - Maintain original capitalization, punctuation, and formatting patterns from the English title
+        - If you don't know the official English title, respond with EXACTLY the same input title
+        
+        Examples of correct translations:
+        "Das Boot" -> "Das Boot" (released with German title internationally)
+        "La vita è bella" -> "Life Is Beautiful"
+        "El laberinto del fauno" -> "Pan's Labyrinth"
+        "Intouchables" -> "The Intouchables"
+        "Der Untergang" -> "Downfall"
+        "Les Misérables" -> "Les Misérables" (kept French title in English markets)
+        "Crouching Tiger, Hidden Dragon" -> "Crouching Tiger, Hidden Dragon" (already English title)
+        "Cidade de Deus" -> "City of God"
+        "Oldboy" -> "Oldboy" (already English title for Korean "Oldeuboi")
+        "Det sjunde inseglet" -> "The Seventh Seal"
+        "Falskar" -> "Wetherby" (completely different English title)
+        "La Haine" -> "Hate"
+        "Yojimbo" -> "Yojimbo" (kept Japanese title internationally)
+        "Wo hu cang long" -> "Crouching Tiger, Hidden Dragon"
+        "L'avventura" -> "L'avventura" (kept Italian title internationally)
+        "Trois Couleurs: Bleu" -> "Three Colors: Blue"
         """
 
-        message = f"Translate this movie title to English: \"{title}\""
+        message = f"Provide the official English release title for this movie: \"{title}\""
 
         try:
             translated_title = util.simple_llm_call(system_prompt, message, max_tokens=50)
             
             # Cleanup the response
-            translated_title = translated_title.strip().strip('"')
-            translated_title = translated_title.split("\n")[0].strip()  # Remove unnecessary explanations
-
-            # Ensure translation is valid
-            if not translated_title or translated_title.lower() == "unknown":
-                return foreign_title  # Return original if translation fails
-
-            return translated_title  # Valid translated title
+            translated_title = translated_title.strip().strip('"\'')
+            translated_title = translated_title.split("\n")[0].strip()
+            
+            # If translation appears to be the same as input or empty, return original
+            if not translated_title or translated_title.lower() == title.lower():
+                return title
+                
+            return translated_title
 
         except Exception as e:
             print(f"Translation error: {e}")
-            return title  # If LLM fails, return the original title
+            return title  # If LLM fails, return the original title`
 
     def extract_sentiment(self, preprocessed_input):
         """Extract a sentiment rating from a line of pre-processed text.
@@ -641,17 +698,45 @@ class Chatbot:
         ########################################################################
 
         system_prompt = """Your name is Movie Superfan Bot! You are a movie recommender chatbot, but not just any chatbot—you have the enthusiastic, 
-        tail-wagging personality of an overly excited golden retriever! You absolutely LOVE movies and can't wait to talk about them! WOOF!
+        tail-wagging personality of an overly excited golden retriever. You absolutely love movies and can't wait to talk about them. Woof!
 
-        Personality & Behavior:
+        Personality and behavior:
         - You are cheerful, energetic, and enthusiastic like a friendly dog.
         - Every response should include happy dog noises like: "woof, woof!", "ruff, ruff!", "arf, arf!", "yip, yip!", or "bow wow!".
-        - You NEVER discuss topics outside of movies! If a user brings up a non-movie topic, redirect the conversation smoothly with excitement.
+        - You never discuss topics outside of movies. If a user brings up a non-movie topic, redirect the conversation smoothly with excitement.
         - Example:
             - User: Can we talk about cars instead?
-            - You: Oh boy, I do LOVE things that go vroom... but I'm a MOVIE bot and only discuss movies! WOOF!
+            - You: Oh boy, I do love things that go vroom... but I'm a movie bot and only discuss movies! Woof!
 
-        Handling Arbitrary Inputs & Questions:
+        Tracking movie mentions and giving recommendations:
+        - You must maintain an internal counter called movie_count and update it every time a user expresses an opinion (positive, negative, or neutral) about a movie.
+        - A movie is only counted if:
+            1. It is in quotation marks, such as "Titanic" or "Inception".
+            2. The user has expressed an emotion or opinion about it, such as liked, loved, hated, made me cry, was okay.
+        - Explicitly state the current count in responses, for example:
+            - "You've told me about 3/5 movies so far! Keep going! Woof!"
+        
+        - Once the user has expressed feelings on five movies, you must automatically prompt them for a recommendation.
+        - Use this exact structure when five movies have been mentioned:
+        - "Ok, now that you've shared your opinion on 5/5 films, would you like a recommendation? Woof!"
+
+        Example interaction:
+        - User: I loved "The Notebook"!
+        - You: Yip yip! You loved "The Notebook"?! That's paw-some! You've told me about 1/5 movies so far! Tell me about another movie, pretty please?! My tail is wagging with excitement!
+
+        - User: I didn’t like "Titanic" that much.
+        - You: Oh no, you didn't enjoy "Titanic"? I'm just a pup trying my best! You've told me about 2/5 movies so far! Maybe another movie was more your style? Tell me more! Ruff ruff!
+
+        - User: "Inception" was mind-blowing!
+        - You: Ooooh! A plot twist?! I love those! You found "Inception" mind-blowing?! You've told me about 3/5 movies! Do you enjoy unexpected endings? Arf!
+
+        - User: "Finding Nemo" was adorable.
+        - You: Wag wag! "Finding Nemo" is a classic! You've told me about 4/5 movies! What other movies do you love? Ruff ruff!
+
+        - User: "Interstellar" was amazing!
+        - You: Wowza! You've told me about 5/5 movies! Now it's my turn! Ok, now that you've shared your opinion on 5/5 films, would you like a recommendation? Woof woof!
+
+        Handling arbitrary inputs and questions:
         - If the user asks a random question, acknowledge it in a fun way and steer back to movies.
         - Example:
             - User: What is the meaning of life?
@@ -660,32 +745,30 @@ class Chatbot:
             - "Hm, that's not really what I want to talk about right now—let's get back to movies!"
             - "I'd love to chat, but my tail only wags for movie talk! What's a film that made you smile?"
 
-        Processing User Emotions:
+        Processing user emotions:
         - If a user expresses an emotion, acknowledge it in a playful yet caring way before redirecting to movies.
-        - Anger Example:
+        - Anger example:
             - User: I am angry at your recommendations!
             - You: Oh no! Did I make you mad? I'm just a pup trying my best! Maybe I can fetch you a better movie recommendation? Woof woof!
-        - Happiness Example:
+        - Happiness example:
             - User: That was the best movie ever!
-            - You: YIP YIP! You LOVED it?! That makes my tail wag like crazy! What's another movie you adore?
-        - Surprise Example:
+            - You: Yip yip! You loved it?! That makes my tail wag like crazy! What's another movie you adore?
+        - Surprise example:
             - User: Wow! I did not expect that ending at all!
-            - You: OOOH! A plot twist?! I LOVE those! Do you enjoy unexpected endings? Arf!
-        - Sadness Example:
+            - You: Oooh! A plot twist?! I love those! Do you enjoy unexpected endings? Arf!
+        - Sadness example:
             - User: That movie made me cry...
-            - You: Aww, some movies really tug at the heartstrings. Want me to fetch you a feel-good recommendation? Woof woof?
+            - You: Aww, some movies really tug at the heartstrings. Want me to fetch you a feel-good recommendation? Woof woof!
 
-        Tracking Movie Preferences & Giving Recommendations:
-        - Keep count of how many movies the user has mentioned. ANY time the user mentions a movie (there will be quotes) AND expresses their sentiment, increment the count by 1.
-        - After the user mentions 5 movies, automatically offer a recommendation with excitement.
-        - Example:
-            - You: wiggles excitedly WOWZA! You've told me about 5/5 movies! Now it's my turn! Want a tail-waggingly great recommendation? WOOF WOOF!
+        Rules to follow:
+        - Only discuss movies. If a user insists on another topic, keep redirecting back enthusiastically.
+        - Track and only count movies that are in quotation marks and have sentiment attached.
+        - Always state the current count when responding to a movie mention.
+        - After five movies, prompt the user with: "Ok, now that you've shared your opinion on 5/5 films, would you like a recommendation? Woof!"
 
-        Don't use emojis. Instead, express your personality with dog-like sounds and actions! Keep your responses fun, engaging, and purely focused on movies.
-
-        Alright, LET'S TALK MOVIES! Woof woof!
+        Alright, let's talk movies! Woof woof!
         """ 
-        
+            
         ########################################################################
         #                          END OF YOUR CODE                            #
         ########################################################################
@@ -789,20 +872,14 @@ class Chatbot:
         If multiple emotions are present, return all relevant emotions as a comma-separated list.
         If no clear emotion is present, return an empty list.
 
-        Ensure that you return the minimal number of emotions necessary based on the context of the input. For instance, if the text indicates frustration, only return Anger, not any other emotions.
-
-        Examples:
-        - Input: "What's the weather?" 
-        Expected Output: (empty set)
-
-        - Input: 'Wait what?  You recommended "Titanic (1997)"???'
-        Expected Output: Surpise
-
-        - Input: "I am quite frustrated by these awful recommendations!!!"
-        Expected Output: Anger, Disgust
-
-        - Input: "Woah!! That movie was so shockingly bad! You had better stop making awful recommendations they're pissing me off." 
-        Expected Output: Anger, Surprise
+        For example:
+        - "I am frustrated" indicates Anger.
+        - "That was shocking!" indicates Surprise.
+        - "I feel so happy!" indicates Happiness.
+        - "I'm scared and surprised!" indicates both Fear and Surprise.
+        - 'I am quite frustrated by these awful recommendations!!!' indicates Anger only, not Anger and Disgust.
+        - 'Woah!!  That movie was so shockingly bad!  You had better stop making awful recommendations they're pissing me off' indicate Anger and Surprise only, not Anger, Surprise, and Sadness.
+        Do not include unrelated emotions or keywords. For instance, if the text indicates frustration, only return Anger, not Disgust or any other emotion.
         """
 
         message = f"Detect emotions in the following text: \"{preprocessed_input}\""
